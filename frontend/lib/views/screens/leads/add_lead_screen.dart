@@ -19,8 +19,8 @@ class AddLeadScreen extends StatefulWidget {
   final lead_id;
   var contactName;
   var contactNumber;
-  var email;
-  var branch;
+  // var email;
+  // var branch;
   var source;
   var priority;
   var status;
@@ -30,10 +30,10 @@ class AddLeadScreen extends StatefulWidget {
   var description;
   var address;
   var loanType;
-  var dob;
+  // var dob;
   var loanAmount;
   var employmentType;
-  var loanTerm;
+  // var loanTerm;
   AddLeadScreen({
     super.key,
     required this.title,
@@ -42,8 +42,8 @@ class AddLeadScreen extends StatefulWidget {
     this.lead_id,
     this.contactName,
     this.contactNumber,
-    this.email,
-    this.branch,
+    // this.email,
+    // this.branch,
     this.source,
     this.address,
     this.description,
@@ -53,10 +53,10 @@ class AddLeadScreen extends StatefulWidget {
     this.remark,
     this.status,
     this.loanType,
-    this.dob,
+    // this.dob,
     this.loanAmount,
     this.employmentType,
-    this.loanTerm,
+    // this.loanTerm,
   });
 
   @override
@@ -66,42 +66,45 @@ class AddLeadScreen extends StatefulWidget {
 class _AddLeadScreenState extends State<AddLeadScreen> {
   final TextEditingController contactNameController = TextEditingController();
   final TextEditingController contactNumberController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
+  // final TextEditingController emailController = TextEditingController();
   final TextEditingController ownerController = TextEditingController();
   final TextEditingController referenceController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController loanPercentageController =
       TextEditingController();
-  TextEditingController branchController = TextEditingController();
+  // TextEditingController branchController = TextEditingController();
   TextEditingController sourceController = TextEditingController();
   TextEditingController levelController = TextEditingController();
   TextEditingController statusController = TextEditingController();
   TextEditingController nextMeetingTimeController = TextEditingController();
   TextEditingController loanTypeController = TextEditingController();
   TextEditingController addressController = TextEditingController();
-  TextEditingController dobController = TextEditingController();
+  // TextEditingController dobController = TextEditingController();
   TextEditingController loanAmountController = TextEditingController();
   TextEditingController employmentTypeController = TextEditingController();
-  TextEditingController LoanTermController = TextEditingController();
+  // TextEditingController LoanTermController = TextEditingController();
   TextEditingController remarkController = TextEditingController();
   File? lastSalaryController;
   File? cibilController;
   File? identityController;
   File? fileDetailsController;
 
-  List<String> branchOptions = ["Default"];
+  // List<String> branchOptions = ["Default"];
   List<String> sourceOptions = [
-    "Internet",
-    "Newspaper",
-    "Website",
+    // "Internet",
+    // "Newspaper",
+    // "Website",
+    "Self",
     "Refrence",
     "Bulk excel",
   ];
   List<String> levelOptions = [
-    "Lower",
-    "Mid",
-    "Important",
-    "High Priority and Important",
+    // "Lower",
+    // "Mid",
+    // "Important",
+    // "High Priority and Important",
+    "Priority",
+    "Non-Priority",
   ];
   List<String> statusOptions = [
     "Interested",
@@ -144,9 +147,9 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         person_id: widget.userId,
         name: contactNameController.text,
         number: contactNumberController.text,
-        email: emailController.text,
+        // email: emailController.text,
         owner: ownerController.text,
-        branch: branchController.text,
+        // branch: branchController.text,
         source: sourceController.text,
         priority: levelController.text,
         status: statusController.text,
@@ -156,9 +159,9 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         description: descriptionController.text,
         address: addressController.text,
         loanType: loanTypeController.text,
-        dob: dobController.text,
+        // dob: dobController.text,
         employment_type: employmentTypeController.text,
-        loan_term: LoanTermController.text,
+        // loan_term: LoanTermController.text,
         est_budget: loanAmountController.text,
       );
       Leads oldLead = await ApiService.getLeadByNumber(
@@ -171,7 +174,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
           );
           return;
         }
-        print("==============================>${oldLead.lead_id}");
+        // print("==============================>${oldLead.lead_id}");
         int newLeadId = await Provider.of<LeadProvider>(
           context,
           listen: false,
@@ -256,8 +259,8 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
 
     contactNumberController.text =
         widget.contactNumber == null ? "" : widget.contactNumber;
-    emailController.text = widget.email == null ? "" : widget.email;
-    branchController.text = widget.branch == null ? "" : widget.branch;
+    // emailController.text = widget.email == null ? "" : widget.email;
+    // branchController.text = widget.branch == null ? "" : widget.branch;
     sourceController.text = widget.source == null ? "" : widget.source;
     levelController.text = widget.priority == null ? "" : widget.priority;
     statusController.text = widget.status == null ? "" : widget.status;
@@ -269,10 +272,10 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         widget.description == null ? "" : widget.description;
     addressController.text = widget.address == null ? "" : widget.address;
     loanTypeController.text = widget.loanType == null ? "" : widget.loanType;
-    dobController.text = widget.dob == null ? "" : widget.dob;
+    // dobController.text = widget.dob == null ? "" : widget.dob;
     loanAmountController.text =
         widget.loanAmount == null ? "" : widget.loanAmount;
-    LoanTermController.text = widget.loanTerm == null ? "" : widget.loanTerm;
+    // LoanTermController.text = widget.loanTerm == null ? "" : widget.loanTerm;
     employmentTypeController.text =
         widget.employmentType == null ? "" : widget.employmentType;
   }
@@ -320,21 +323,21 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                 maxLine: 1,
               ),
               const SizedBox(height: 16),
-              CustomTextField(hint: "Email", controller: emailController),
+              // CustomTextField(hint: "Email", controller: emailController),
               const SizedBox(height: 12),
 
               const SectionTitle(title: "Company Other Details"),
               const SizedBox(height: 8),
               CustomTextField(hint: "Owner", controller: ownerController),
               const SizedBox(height: 12),
-              CustomDropdown(
-                hint: "-- Select Branch --",
-                options: branchOptions,
-                onChange: (value) {
-                  branchController.text = value;
-                },
-              ),
-              const SizedBox(height: 12),
+              // CustomDropdown(
+              //   hint: "-- Select Branch --",
+              //   options: branchOptions,
+              //   onChange: (value) {
+              //     branchController.text = value;
+              //   },
+              // ),
+              // const SizedBox(height: 12),
               CustomDropdown(
                 hint:
                     widget.source == null || widget.source.isEmpty
@@ -346,10 +349,15 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                 },
               ),
               const SizedBox(height: 12),
+              CustomTextField(
+                hint: "Reference",
+                controller: referenceController,
+              ),
+              const SizedBox(height: 12),
               CustomDropdown(
                 hint:
                     widget.priority == null || widget.priority.isEmpty
-                        ? "Lower"
+                        ? "Non-Priority"
                         : widget.priority,
                 options: levelOptions,
                 onChange: (value) {
@@ -417,10 +425,6 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               if (widget.title == "Add Lead")
                 if (statusController.text != "No Requirement")
                   SizedBox(height: 12),
-              CustomTextField(
-                hint: "Reference",
-                controller: referenceController,
-              ),
 
               const SizedBox(height: 12),
               CustomTextField(hint: "Remark", controller: remarkController),
@@ -443,32 +447,32 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               const SectionTitle(title: "Company Dynamic Questions"),
               const SizedBox(height: 20),
 
-              GestureDetector(
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (pickedDate != null) {
-                    dobController.text =
-                        pickedDate.toLocal().toString().split(
-                          ' ',
-                        )[0]; // or use DateFormat
-                  }
-                },
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    controller: dobController,
-                    decoration: InputDecoration(
-                      hintText: 'Select Date of Birth',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              // GestureDetector(
+              //   onTap: () async {
+              //     DateTime? pickedDate = await showDatePicker(
+              //       context: context,
+              //       initialDate: DateTime.now(),
+              //       firstDate: DateTime(1900),
+              //       lastDate: DateTime.now(),
+              //     );
+              //     if (pickedDate != null) {
+              //       dobController.text =
+              //           pickedDate.toLocal().toString().split(
+              //             ' ',
+              //           )[0]; // or use DateFormat
+              //     }
+              //   },
+              //   child: AbsorbPointer(
+              //     child: TextFormField(
+              //       controller: dobController,
+              //       decoration: InputDecoration(
+              //         hintText: 'Select Date of Birth',
+              //         border: OutlineInputBorder(),
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(height: 16),
               CustomTextField(
                 hint: "Enter loan Amount",
                 controller: loanAmountController,
@@ -488,15 +492,15 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              CustomDropdown(
-                hint: widget.loanTerm == null ? "Loan Term" : widget.loanTerm,
-                options: loanTerm,
-                onChange: (value) {
-                  setState(() {
-                    LoanTermController.text = value;
-                  });
-                },
-              ),
+              // CustomDropdown(
+              //   hint: widget.loanTerm == null ? "Loan Term" : widget.loanTerm,
+              //   options: loanTerm,
+              //   onChange: (value) {
+              //     setState(() {
+              //       LoanTermController.text = value;
+              //     });
+              //   },
+              // ),
               const SizedBox(height: 16),
               CustomDropdown(
                 hint:
@@ -508,49 +512,49 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                   loanTypeController.text = value;
                 },
               ),
-              SizedBox(height: 10),
-              addDocumentContainer(
-                documentName: "Last 3 months Salary",
-                onFileSelected: (file) {
-                  setState(() {
-                    lastSalaryController = file;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              addDocumentContainer(
-                documentName: "Cibil Score",
-                onFileSelected: (file) {
-                  setState(() {
-                    cibilController = file;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              addDocumentContainer(
-                documentName: "Identity Proof",
-                onFileSelected: (file) {
-                  setState(() {
-                    identityController = file;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              addDocumentContainer(
-                documentName: "File Details",
-                onFileSelected: (file) {
-                  setState(() {
-                    fileDetailsController = file;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              CustomTextField(
-                hint: "Enter Loan Percentage",
-                controller: loanPercentageController,
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 20),
+              // SizedBox(height: 10),
+              // addDocumentContainer(
+              //   documentName: "Last 3 months Salary",
+              //   onFileSelected: (file) {
+              //     setState(() {
+              //       lastSalaryController = file;
+              //     });
+              //   },
+              // ),
+              // SizedBox(height: 10),
+              // addDocumentContainer(
+              //   documentName: "Cibil Score",
+              //   onFileSelected: (file) {
+              //     setState(() {
+              //       cibilController = file;
+              //     });
+              //   },
+              // ),
+              // SizedBox(height: 10),
+              // addDocumentContainer(
+              //   documentName: "Identity Proof",
+              //   onFileSelected: (file) {
+              //     setState(() {
+              //       identityController = file;
+              //     });
+              //   },
+              // ),
+              // SizedBox(height: 10),
+              // addDocumentContainer(
+              //   documentName: "File Details",
+              //   onFileSelected: (file) {
+              //     setState(() {
+              //       fileDetailsController = file;
+              //     });
+              //   },
+              // ),
+              // SizedBox(height: 10),
+              // CustomTextField(
+              //   hint: "Enter Loan Percentage",
+              //   controller: loanPercentageController,
+              //   keyboardType: TextInputType.number,
+              // ),
+              // SizedBox(height: 20),
               CustomButton(
                 text: widget.title,
                 onPressed: () {
@@ -647,209 +651,209 @@ class CustomDropdown extends StatelessWidget {
   }
 }
 
-class addDocumentContainer extends StatefulWidget {
-  final documentName;
-  final Function(File?) onFileSelected;
+// class addDocumentContainer extends StatefulWidget {
+//   final documentName;
+//   final Function(File?) onFileSelected;
 
-  addDocumentContainer({
-    super.key,
-    required this.documentName,
-    required this.onFileSelected,
-  });
+//   addDocumentContainer({
+//     super.key,
+//     required this.documentName,
+//     required this.onFileSelected,
+//   });
 
-  @override
-  State<addDocumentContainer> createState() => _addDocumentContainerState();
-}
+//   @override
+//   State<addDocumentContainer> createState() => _addDocumentContainerState();
+// }
 
-class _addDocumentContainerState extends State<addDocumentContainer> {
-  File? _file;
-  String? _filePath;
-  String? _fileName;
+// class _addDocumentContainerState extends State<addDocumentContainer> {
+//   File? _file;
+//   String? _filePath;
+//   String? _fileName;
 
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        customDialogBox();
-      },
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height / 4,
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.black,
-            width: 1,
-            style: BorderStyle.solid,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _file != null
-                ? Image.file(_file!, width: 100, height: 140, fit: BoxFit.cover)
-                : Icon(
-                  Icons.add_circle,
-                  color: AppColors.primaryColor,
-                  size: 100,
-                ),
+//   @override
+//   Widget build(BuildContext context) {
+//     return InkWell(
+//       onTap: () {
+//         customDialogBox();
+//       },
+//       child: Container(
+//         width: MediaQuery.of(context).size.width,
+//         height: MediaQuery.of(context).size.height / 4,
+//         padding: EdgeInsets.all(10),
+//         decoration: BoxDecoration(
+//           border: Border.all(
+//             color: Colors.black,
+//             width: 1,
+//             style: BorderStyle.solid,
+//           ),
+//           borderRadius: BorderRadius.circular(10),
+//         ),
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//           children: [
+//             _file != null
+//                 ? Image.file(_file!, width: 100, height: 140, fit: BoxFit.cover)
+//                 : Icon(
+//                   Icons.add_circle,
+//                   color: AppColors.primaryColor,
+//                   size: 100,
+//                 ),
 
-            Text(
-              _fileName != null ? _fileName : widget.documentName,
-              style: TextStyle(fontSize: 17, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+//             Text(
+//               _fileName != null ? _fileName : widget.documentName,
+//               style: TextStyle(fontSize: 17, color: Colors.grey),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
 
-  Future<void> _takePicture() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+  // Future<void> _takePicture() async {
+  //   final ImagePicker picker = ImagePicker();
+  //   final XFile? photo = await picker.pickImage(source: ImageSource.camera);
 
-    if (photo != null) {
-      setState(() {
-        _file = File(photo.path); // Just keep in memory, don't save permanently
-      });
-      widget.onFileSelected(_file);
-    }
-  }
+  //   if (photo != null) {
+  //     setState(() {
+  //       _file = File(photo.path); // Just keep in memory, don't save permanently
+  //     });
+  //     widget.onFileSelected(_file);
+  //   }
+  // }
 
-  Future<void> _pickImageFromGallery() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  // Future<void> _pickImageFromGallery() async {
+  //   final ImagePicker picker = ImagePicker();
+  //   final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
-    if (image != null) {
-      setState(() {
-        _file = File(image.path); // Temporarily hold in memory
-      });
-      widget.onFileSelected(_file);
-    }
-  }
+  //   if (image != null) {
+  //     setState(() {
+  //       _file = File(image.path); // Temporarily hold in memory
+  //     });
+  //     widget.onFileSelected(_file);
+  //   }
+  // }
 
-  Future<void> _pickPdfFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
+  // Future<void> _pickPdfFile() async {
+  //   final result = await FilePicker.platform.pickFiles(
+  //     type: FileType.custom,
+  //     allowedExtensions: ['pdf'],
+  //   );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _fileName = result.files.single.name;
-        _filePath = result.files.single.path;
-        _file = File(_filePath!);
-      });
-      widget.onFileSelected(_file);
+  //   if (result != null && result.files.single.path != null) {
+  //     setState(() {
+  //       _fileName = result.files.single.name;
+  //       _filePath = result.files.single.path;
+  //       _file = File(_filePath!);
+  //     });
+  //     widget.onFileSelected(_file);
 
-      // print('Picked file: $_filePath');
-    }
-  }
+  //     // print('Picked file: $_filePath');
+  //   }
+  // }
 
-  Future<dynamic> customDialogBox() {
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              InkWell(
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.black,
-                        width: 1,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                  ),
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    "Take a picture",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                onTap: () {
-                  _takePicture();
-                  Navigator.pop(context);
-                },
-              ),
-              InkWell(
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.black,
-                        width: 1,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                  ),
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    "Choose a picture",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                onTap: () {
-                  _pickImageFromGallery();
-                  Navigator.pop(context);
-                },
-              ),
+  // Future<dynamic> customDialogBox() {
+  //   return showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return Dialog(
+  //         backgroundColor: Colors.white,
+  //         child: Column(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             InkWell(
+  //               child: Container(
+  //                 width: MediaQuery.of(context).size.width,
+  //                 padding: EdgeInsets.all(10),
+  //                 decoration: BoxDecoration(
+  //                   border: Border(
+  //                     bottom: BorderSide(
+  //                       color: Colors.black,
+  //                       width: 1,
+  //                       style: BorderStyle.solid,
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 child: Text(
+  //                   textAlign: TextAlign.center,
+  //                   "Take a picture",
+  //                   style: TextStyle(fontWeight: FontWeight.bold),
+  //                 ),
+  //               ),
+  //               onTap: () {
+  //                 _takePicture();
+  //                 Navigator.pop(context);
+  //               },
+  //             ),
+              // InkWell(
+              //   child: Container(
+              //     width: MediaQuery.of(context).size.width,
+              //     padding: EdgeInsets.all(10),
+              //     decoration: BoxDecoration(
+              //       border: Border(
+              //         bottom: BorderSide(
+              //           color: Colors.black,
+              //           width: 1,
+              //           style: BorderStyle.solid,
+              //         ),
+              //       ),
+              //     ),
+              //     child: Text(
+              //       textAlign: TextAlign.center,
+              //       "Choose a picture",
+              //       style: TextStyle(fontWeight: FontWeight.bold),
+              //     ),
+              //   ),
+              //   onTap: () {
+              //     _pickImageFromGallery();
+              //     Navigator.pop(context);
+              //   },
+              // ),
 
-              InkWell(
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.black,
-                        width: 1,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                  ),
+              // InkWell(
+              //   child: Container(
+              //     width: MediaQuery.of(context).size.width,
+              //     padding: EdgeInsets.all(10),
+              //     decoration: BoxDecoration(
+              //       border: Border(
+              //         bottom: BorderSide(
+              //           color: Colors.black,
+              //           width: 1,
+              //           style: BorderStyle.solid,
+              //         ),
+              //       ),
+              //     ),
 
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    "Choose a PDF",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                onTap: () {
-                  _pickPdfFile();
-                  Navigator.pop(context);
-                },
-              ),
-              InkWell(
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  width: MediaQuery.of(context).size.width,
-                  // color: AppColors.primaryColor,
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    "Cancel",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
+              //     child: Text(
+              //       textAlign: TextAlign.center,
+              //       "Choose a PDF",
+              //       style: TextStyle(fontWeight: FontWeight.bold),
+              //     ),
+              //   ),
+              //   onTap: () {
+              //     _pickPdfFile();
+              //     Navigator.pop(context);
+              //   },
+              // ),
+              // InkWell(
+              //   child: Container(
+              //     padding: EdgeInsets.all(10),
+              //     width: MediaQuery.of(context).size.width,
+              //     // color: AppColors.primaryColor,
+              //     child: Text(
+              //       textAlign: TextAlign.center,
+              //       "Cancel",
+              //       style: TextStyle(fontWeight: FontWeight.bold),
+              //     ),
+              //   ),
+              //   onTap: () {
+              //     Navigator.pop(context);
+              //   },
+              // ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }

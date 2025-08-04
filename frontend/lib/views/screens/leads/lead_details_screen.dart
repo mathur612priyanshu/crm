@@ -253,7 +253,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                                           contactName: widget.lead.name ?? '',
                                           contactNumber:
                                               widget.lead.number ?? '',
-                                          email: widget.lead.email ?? '',
+                                          // email: widget.lead.email ?? '',
                                           source: widget.lead.source ?? '',
                                           priority: widget.lead.priority ?? '',
                                           status: widget.lead.status ?? '',
@@ -264,10 +264,10 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                                               widget.lead.description ?? '',
                                           address: widget.lead.address ?? '',
                                           loanType: widget.lead.loanType ?? '',
-                                          dob: widget.lead.dob ?? '',
+                                          // dob: widget.lead.dob ?? '',
                                           loanAmount:
                                               widget.lead.est_budget ?? '',
-                                          loanTerm: widget.lead.loan_term ?? '',
+                                          // loanTerm: widget.lead.loan_term ?? '',
                                           employmentType:
                                               widget.lead.employment_type ?? '',
                                         ),
@@ -343,12 +343,11 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                         const SizedBox(height: 8),
 
                         /// DOB
-                        _buildIconRow(
-                          Icons.cake_rounded,
-                          Colors.pink,
-                          "DOB: ${widget.lead.dob ?? '-'}",
-                        ),
-
+                        // _buildIconRow(
+                        //   Icons.cake_rounded,
+                        //   Colors.pink,
+                        //   "DOB: ${widget.lead.dob ?? '-'}",
+                        // ),
                         const SizedBox(height: 8),
 
                         /// Loan Type
@@ -361,11 +360,11 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                         const SizedBox(height: 8),
 
                         /// Loan Term
-                        _buildIconRow(
-                          Icons.timelapse,
-                          Colors.deepPurple,
-                          "Loan Term: ${widget.lead.loan_term ?? '-'}",
-                        ),
+                        // _buildIconRow(
+                        //   Icons.timelapse,
+                        //   Colors.deepPurple,
+                        //   "Loan Term: ${widget.lead.loan_term ?? '-'}",
+                        // ),
 
                         const SizedBox(height: 8),
 

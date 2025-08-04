@@ -156,9 +156,9 @@ class LeadProvider with ChangeNotifier {
             name: updatedLead.name ?? oldLead.name,
             number: updatedLead.number ?? oldLead.number,
             email: updatedLead.email ?? oldLead.email,
-            dob: updatedLead.dob ?? oldLead.dob,
+            // dob: updatedLead.dob ?? oldLead.dob,
             owner: updatedLead.owner ?? oldLead.owner,
-            branch: updatedLead.branch ?? oldLead.branch,
+            // branch: updatedLead.branch ?? oldLead.branch,
             source: updatedLead.source ?? oldLead.source,
             priority: updatedLead.priority ?? oldLead.priority,
             status: updatedLead.status ?? oldLead.status,
@@ -172,7 +172,7 @@ class LeadProvider with ChangeNotifier {
             createdAt: oldLead.createdAt,
             employment_type:
                 updatedLead.employment_type ?? oldLead.employment_type,
-            loan_term: updatedLead.loan_term ?? oldLead.loan_term,
+            // loan_term: updatedLead.loan_term ?? oldLead.loan_term,
           );
 
           // File login handling

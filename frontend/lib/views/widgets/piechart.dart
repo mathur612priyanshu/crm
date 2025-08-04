@@ -8,9 +8,10 @@ class DynamicPieChart extends StatelessWidget {
   DynamicPieChart({Key? key, required this.leads}) : super(key: key);
 
   final List<String> sources = [
-    "Internet",
-    "Newspaper",
-    "Website",
+    // "Internet",
+    // "Newspaper",
+    // "Website",
+    "Self",
     "Refrence",
     "Bulk excel",
   ];

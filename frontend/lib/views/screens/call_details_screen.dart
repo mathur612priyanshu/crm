@@ -136,7 +136,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
 
   void addLeadSubmission() async {
     int idOfLead;
-    updateCall();
+    // updateCall();
     if (contactNameController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -155,6 +155,8 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       next_meeting: nextMeetingController.text,
       remark: remarkController.text,
       est_budget: budgetController.text,
+      loanType: loanType,
+      priority: priority,
     );
     // bool success = await ApiService.addLead(newLead);
     int newLeadId = await Provider.of<LeadProvider>(
@@ -179,6 +181,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       next_meeting: nextMeetingController.text,
       status: feedbackStatus,
       remark: remarkController.text,
+      loanType: loanType,
     );
     // await ApiService.addHistory(newHistory);
     Provider.of<HistoryProvider>(context, listen: false).addHistory(newHistory);
@@ -188,6 +191,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       emp_id: emp_id,
       name: contactNameController.text,
       number: widget.number,
+      remark: remarkController.text,
     );
     // await ApiService.addCalls(call);
     Provider.of<CallsProvider>(context, listen: false).addCall(call);

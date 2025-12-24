@@ -4,6 +4,7 @@ import 'package:capital_care/models/calls_model.dart';
 import 'package:capital_care/services/api_service.dart';
 import 'package:capital_care/theme/appcolors.dart';
 import 'package:capital_care/views/screens/call_details_screen.dart';
+import 'package:capital_care/views/screens/leads/lead_details_screen.dart';
 import 'package:capital_care/views/widgets/app_scaffold.dart';
 import 'package:capital_care/views/widgets/custom_appbar.dart';
 import 'package:flutter/material.dart';
@@ -328,128 +329,152 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
                         itemCount: filteredCallLogs.length,
                         itemBuilder: (context, index) {
                           final call = filteredCallLogs[index];
-                          return Card(
-                            elevation: 4,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 8.0,
+                          return InkWell(
+                            onTap: () async {
+                              final lead =
+                                  await Provider.of<LeadProvider>(
+                                    context,
+                                    listen: false,
+                                  ).getLeadIfAvailable(call.lead_id) ??
+                                  await ApiService.getLeadByLeadId(
+                                    call.lead_id,
+                                  );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          LeadDetailsScreen(lead: lead),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              elevation: 4,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: ListTile(
-                                trailing: IconButton(
-                                  onPressed: () {
-                                    makeDirectCall(call.number, call);
-                                  },
-                                  icon: Icon(Icons.call),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.indigo,
-                                  child: Text(
-                                    call.name.isNotEmpty
-                                        ? call.name[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(color: Colors.white),
+                                child: ListTile(
+                                  trailing: IconButton(
+                                    onPressed: () {
+                                      makeDirectCall(call.number, call);
+                                    },
+                                    icon: Icon(Icons.call),
                                   ),
-                                ),
-                                title: Text(
-                                  call.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
                                   ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text("Number: ${call.number}"),
-                                    Text(
-                                      "Time: ${formatDateTime(call.createdAt)}",
+                                  leading: CircleAvatar(
+                                    backgroundColor: Colors.indigo,
+                                    child: Text(
+                                      call.name.isNotEmpty
+                                          ? call.name[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                    const SizedBox(height: 6),
+                                  ),
+                                  title: Text(
+                                    call.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 4),
+                                      Text("Number: ${call.number}"),
+                                      Text(
+                                        "Time: ${formatDateTime(call.createdAt)}",
+                                      ),
+                                      const SizedBox(height: 6),
 
-                                    // 👇 Responsive Remark Row
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // Expanded to prevent overflow
-                                        Expanded(
-                                          child: Text(
-                                            call.remark != null &&
-                                                    call.remark!
-                                                        .trim()
-                                                        .isNotEmpty
-                                                ? "Remark: ${call.remark}"
-                                                : "Remark: No remark available",
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 14,
+                                      // 👇 Responsive Remark Row
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Expanded to prevent overflow
+                                          Expanded(
+                                            child: Text(
+                                              call.remark != null &&
+                                                      call.remark!
+                                                          .trim()
+                                                          .isNotEmpty
+                                                  ? "Remark: ${call.remark}"
+                                                  : "Remark: No remark available",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ),
                                             ),
                                           ),
-                                        ),
 
-                                        const SizedBox(width: 4),
+                                          const SizedBox(width: 4),
 
-                                        // View button (tap to show full remark)
-                                        InkWell(
-                                          onTap: () {
-                                            showDialog(
-                                              context: context,
-                                              builder:
-                                                  (context) => AlertDialog(
-                                                    title: const Text(
-                                                      "Call Remark",
-                                                    ),
-                                                    content: Text(
-                                                      call.remark != null &&
-                                                              call.remark != ""
-                                                          ? call.remark
-                                                          : 'No remark available.',
-                                                      style: const TextStyle(
-                                                        fontSize: 16,
+                                          // View button (tap to show full remark)
+                                          InkWell(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (context) => AlertDialog(
+                                                      title: const Text(
+                                                        "Call Remark",
                                                       ),
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed:
-                                                            () =>
-                                                                Navigator.of(
-                                                                  context,
-                                                                ).pop(),
-                                                        child: const Text(
-                                                          "Close",
+                                                      content: Text(
+                                                        call.remark != null &&
+                                                                call.remark !=
+                                                                    ""
+                                                            ? call.remark
+                                                            : 'No remark available.',
+                                                        style: const TextStyle(
+                                                          fontSize: 16,
                                                         ),
                                                       ),
-                                                    ],
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed:
+                                                              () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(),
+                                                          child: const Text(
+                                                            "Close",
                                                           ),
+                                                        ),
+                                                      ],
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
                                                     ),
-                                                  ),
-                                            );
-                                          },
-                                          child: Text(
-                                            " (view)",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primaryColor,
-                                              fontSize: 14,
+                                              );
+                                            },
+                                            child: Text(
+                                              " (view)",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primaryColor,
+                                                fontSize: 14,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

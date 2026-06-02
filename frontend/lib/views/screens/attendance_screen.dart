@@ -264,7 +264,7 @@ class _AttendancescreenState extends State<Attendancescreen> {
           isAttendanceMarked = true;
           attendanceId = responseData['attendance']['id'];
         });
-        print("=========== $attendanceId");
+        // print("=========== $attendanceId");
         // await _saveAttendanceState(attendanceId, isAttendanceMarked);
       } else if (response.statusCode == 400) {
         setState(() => attendanceStatus = 'Attendance already marked today.');

@@ -42,9 +42,9 @@ class ApiService {
       print("employee updated: ${response.body}");
       return true;
     } else {
-      print(
-        "Update failed =================================================>>>>>>>>>>>>>>>: ${response.body}",
-      );
+      // print(
+      //   "Update failed =================================================>>>>>>>>>>>>>>>: ${response.body}",
+      // );
       return false;
     }
   }
@@ -111,12 +111,12 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      print("lead added : ${response.body}");
+      // print("lead added : ${response.body}");
       final Map<String, dynamic> jsonData = jsonDecode(response.body);
-      print(
-        "===========================================>>>>>>>>>${jsonData['id']}",
-      );
-      print("==================================>>>>${response.body[1]}");
+      // print(
+      //   "===========================================>>>>>>>>>${jsonData['id']}",
+      // );
+      // print("==================================>>>>${response.body[1]}");
       return jsonData['id'];
     } else {
       print("failed : ${response.body}");
@@ -138,9 +138,9 @@ class ApiService {
       print("Lead updated: ${response.body}");
       return true;
     } else {
-      print(
-        "Update failed =================================================>>>>>>>>>>>>>>>: ${response.body}",
-      );
+      // print(
+      //   "Update failed =================================================>>>>>>>>>>>>>>>: ${response.body}",
+      // );
       return false;
     }
   }
@@ -310,21 +310,21 @@ class ApiService {
   }
 
   static Future<bool> updateCall(Calls call, int callId) async {
-    print("===========================>update call called");
+    // print("===========================>update call called");
     final url = Uri.parse("$baseUrl/updateCall/$callId");
     final response = await http.put(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(call.toJson()),
     );
-    print("=====================>call update ${response.body}");
+    // print("=====================>call update ${response.body}");
     if (response.statusCode == 200) {
       print("Call updated: ${response.body}");
       return true;
     } else {
-      print(
-        "Update failed =================================================>>>>>>>>>>>>>>>: ${response.body}",
-      );
+      // print(
+      //   "Update failed =================================================>>>>>>>>>>>>>>>: ${response.body}",
+      // );
       return false;
     }
   }
@@ -337,7 +337,7 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print("================================>>>$data");
+      // print("================================>>>$data");
       return {'total': data['total'] ?? 0, 'today': data['today'] ?? 0};
     } else {
       print("Failed to get total calls count. Status: ${response.statusCode}");
@@ -424,7 +424,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonData = jsonDecode(response.body);
       final List taskList = jsonData['tasks'];
-      print("===============> tasks fetched + $taskList");
+      // print("===============> tasks fetched + $taskList");
       return taskList.map((e) => Task.fromJson(e)).toList();
     } else {
       throw Exception("Failed to load Tasks");
@@ -477,13 +477,13 @@ class ApiService {
   static Future<List<Template>> getTemplates() async {
     final url = Uri.parse("$baseUrl/get_templates");
     final response = await http.get(url);
-    print("template get krne ki koshish");
+    // print("template get krne ki koshish");
     if (response.statusCode == 200) {
-      print("status code 200 h");
+      // print("status code 200 h");
       final jd = jsonDecode(response.body);
       final List jsonData = jd['data'] as List<dynamic>;
-      print("===============>${jsonData}");
-      print(jsonData.length);
+      // print("===============>${jsonData}");
+      // print(jsonData.length);
       return jsonData.map((e) => Template.fromJson(e)).toList();
     } else {
       throw Exception("Failed to load templates");

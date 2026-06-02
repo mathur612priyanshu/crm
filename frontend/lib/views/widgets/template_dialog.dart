@@ -3,9 +3,27 @@ import 'package:capital_care/services/api_service.dart';
 import 'package:capital_care/theme/appcolors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class TemplateDialog {
+  static String _templateFileUrl(String fileUrl) {
+    if (fileUrl.isEmpty) return '';
+
+    final apiUri = Uri.parse(ApiService.baseUrl);
+    final appOrigin =
+        '${apiUri.scheme}://${apiUri.host}${apiUri.hasPort ? ':${apiUri.port}' : ''}';
+
+    final fileUri = Uri.tryParse(fileUrl);
+    if (fileUri != null && fileUri.hasScheme) {
+      if (fileUri.path.startsWith('/uploads/')) {
+        return '$appOrigin${fileUri.path}';
+      }
+
+      return fileUrl;
+    }
+
+    return '$appOrigin${fileUrl.startsWith('/') ? '' : '/'}$fileUrl';
+  }
+
   static Future<void> show(
     BuildContext context,
     String phone,
@@ -23,7 +41,7 @@ class TemplateDialog {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              print("Error fetching templates: ${snapshot.error}");
+              debugPrint("Error fetching templates: ${snapshot.error}");
               return AlertDialog(
                 title: Text('Error'),
                 content: Text('Failed to load templates.'),
@@ -47,6 +65,10 @@ class TemplateDialog {
 
               return StatefulBuilder(
                 builder: (context, setState) {
+                  final selectedFileUrl = _templateFileUrl(
+                    selectedTemplate?.fileUrl ?? "",
+                  );
+
                   return Dialog(
                     backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
@@ -113,7 +135,7 @@ class TemplateDialog {
                               SizedBox(height: 10),
                               DropdownButtonFormField<Template>(
                                 items: templates,
-                                value: selectedTemplate,
+                                initialValue: selectedTemplate,
                                 onChanged: (value) {
                                   setState(() {
                                     selectedTemplate = value;
@@ -129,12 +151,20 @@ class TemplateDialog {
                               SizedBox(height: 10),
 
                               selectedTemplate != null &&
-                                      selectedTemplate!.fileUrl.isNotEmpty
+                                      selectedFileUrl.isNotEmpty
                                   ? selectedTemplate!.fileType == "image"
                                       ? Image.network(
-                                        selectedTemplate!.fileUrl,
+                                        selectedFileUrl,
                                         height: 150,
                                         fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => Text(
+                                              'Template image failed to load',
+                                            ),
                                       )
                                       : Column(
                                         children: [
@@ -175,7 +205,7 @@ class TemplateDialog {
                                   ElevatedButton.icon(
                                     onPressed: () async {
                                       sendImageWithMessageToWhatsApp(
-                                        selectedTemplate?.fileUrl ?? "",
+                                        selectedFileUrl,
                                         messageController.text.trim(),
                                       );
                                     },
@@ -218,6 +248,6 @@ Future<void> sendImageWithMessageToWhatsApp(
       'message': message,
     });
   } on PlatformException catch (e) {
-    print("Failed to send: ${e.message}");
+    debugPrint("Failed to send: ${e.message}");
   }
 }

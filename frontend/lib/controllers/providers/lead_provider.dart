@@ -141,7 +141,7 @@ class LeadProvider with ChangeNotifier {
   }
 
   Future<void> updateLead(Leads updatedLead, int leadId) async {
-    print("==============================> updateleadCalled");
+    // print("==============================> updateleadCalled");
     try {
       bool success = await ApiService.updateLead(leadId, updatedLead);
       if (success) {
@@ -238,7 +238,7 @@ class LeadProvider with ChangeNotifier {
             }
           }
 
-          print("=====================================> lead updated");
+          // print("=====================================> lead updated");
           notifyListeners();
         }
       }
@@ -248,7 +248,7 @@ class LeadProvider with ChangeNotifier {
   }
 
   Leads? getLeadIfAvailable(var lead_id) {
-    print("=================> provider me dhunda");
+    // print("=================> provider me dhunda");
     final index = _leads.indexWhere((lead) => lead.lead_id == lead_id);
     if (index != -1) {
       return _leads[index];

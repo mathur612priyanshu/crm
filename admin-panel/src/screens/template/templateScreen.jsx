@@ -13,6 +13,14 @@ function TemplateScreen() {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
+  const getFileUrl = (fileUrl) => {
+    if (!fileUrl) return '';
+    if (fileUrl.startsWith('http')) return fileUrl;
+
+    const apiOrigin = API_URL.replace(/\/api\/?$/, '');
+    return `${apiOrigin}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+  };
+
   // Fetch templates
   const fetchTemplates = async () => {
     try {
@@ -89,6 +97,7 @@ function TemplateScreen() {
         <thead>
           <tr className="bg-gray-100">
             <th className="border border-gray-300 px-4 py-2">Template Name</th>
+            <th className="border border-gray-300 px-4 py-2">Template</th>
             <th className="border border-gray-300 px-4 py-2">Template Body</th>
             <th className="border border-gray-300 px-4 py-2">File Type</th>
             <th className="border border-gray-300 px-4 py-2">Added Time</th>
@@ -99,6 +108,28 @@ function TemplateScreen() {
           {templates.map((template) => (
             <tr key={template.id}>
               <td className="border border-gray-300 px-4 py-2">{template.name}</td>
+              <td className="border border-gray-300 px-4 py-2">
+                {template.fileType === 'image' && template.fileUrl ? (
+                  <a href={getFileUrl(template.fileUrl)} target="_blank" rel="noreferrer">
+                    <img
+                      src={getFileUrl(template.fileUrl)}
+                      alt={template.name}
+                      className="h-16 w-16 rounded object-cover border border-gray-200"
+                    />
+                  </a>
+                ) : template.fileUrl ? (
+                  <a
+                    href={getFileUrl(template.fileUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View file
+                  </a>
+                ) : (
+                  <span className="text-gray-400">No file</span>
+                )}
+              </td>
               <td className="border border-gray-300 px-4 py-2">{template.description}</td>
               <td className="border border-gray-300 px-4 py-2">{template.fileType}</td>
               <td className="border border-gray-300 px-4 py-2">{new Date(template.createdAt).toLocaleString()}</td>

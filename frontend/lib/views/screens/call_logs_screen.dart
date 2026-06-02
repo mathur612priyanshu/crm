@@ -496,7 +496,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
 
     if (await Permission.phone.isGranted) {
       await FlutterPhoneDirectCaller.callNumber(number);
-      print("==================> ye method yha tk aaya");
+      // print("==================> ye method yha tk aaya");
       final lead =
           await Provider.of<LeadProvider>(
             context,

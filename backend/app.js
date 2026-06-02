@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const bodyParser = require("body-parser");
 const leadRoutes = require("./routes/leadRoutes");
@@ -11,11 +12,14 @@ const callsRoutes = require("./routes/callsRoutes");
 const attendanceRoutes = require("./routes/attendance_routes");
 const taskRoutes = require("./routes/taskRoutes");
 const templateRoutes = require('./routes/template_route');
-const { createBucketIfNotExists } = require('./services/bucket_services');
+// AWS bucket is disabled for now because the old AWS account is no longer active.
+// const { createBucketIfNotExists } = require('./services/bucket_services');
 
 const app = express();
+app.set("trust proxy", true);
 app.use(cors());
-createBucketIfNotExists();
+// createBucketIfNotExists();
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const port = 5000 || process.env.PORT;
 

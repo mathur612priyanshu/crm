@@ -1,17 +1,61 @@
-const { uploadFileToS3, deleteFileFromS3} = require('../services/s3_services');
+const fs = require('fs');
+const path = require('path');
 const Template = require('../models/template_model');
+
+const getLocalFileUrl = (file) => {
+  return `/uploads/templates/${file.filename}`;
+};
+
+const getPublicFileUrl = (req, fileUrl) => {
+  if (!fileUrl) return fileUrl;
+
+  try {
+    const pathname = fileUrl.startsWith('http')
+      ? new URL(fileUrl).pathname
+      : fileUrl;
+
+    if (!pathname.startsWith('/uploads/templates/')) return fileUrl;
+    return `${req.protocol}://${req.get('host')}${pathname}`;
+  } catch (err) {
+    return fileUrl;
+  }
+};
+
+const deleteLocalUploadedFile = (fileUrl) => {
+  if (!fileUrl) return;
+
+  try {
+    const pathname = fileUrl.startsWith('http')
+      ? new URL(fileUrl).pathname
+      : fileUrl;
+
+    if (!pathname.startsWith('/uploads/templates/')) return;
+
+    const filename = path.basename(pathname);
+    const filePath = path.join(__dirname, '..', 'uploads', 'templates', filename);
+    fs.unlink(filePath, (err) => {
+      if (err && err.code !== 'ENOENT') {
+        console.error('Error deleting local uploaded file:', err.message);
+      }
+    });
+  } catch (err) {
+    console.error('Invalid local file URL:', fileUrl);
+  }
+};
 
 exports.createTemplate = async (req, res) => {
   try {
     const { name, description, fileType } = req.body;
-    let fileUrl = null;  // change const → let
+    let fileUrl = null;
 
-    // If fileType is not 'none', then file must be uploaded
     if (fileType !== "none") {
       if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
-      fileUrl = await uploadFileToS3(req.file);  // upload and get URL
+
+      fileUrl = getLocalFileUrl(req.file);
+    } else if (req.file?.path) {
+      fs.unlink(req.file.path, () => {});
     }
 
     const newTemplate = await Template.create({
@@ -27,23 +71,33 @@ exports.createTemplate = async (req, res) => {
       data: newTemplate,
     });
   } catch (err) {
+    if (req.file?.path) {
+      fs.unlink(req.file.path, () => {});
+    }
+
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-
 exports.getAllTemplates = async (req, res) => {
   try {
     const templates = await Template.findAll();
-    res.status(200).json({ success: true, data: templates });
+    const data = templates.map((template) => {
+      const json = template.toJSON();
+      return {
+        ...json,
+        fileUrl: getPublicFileUrl(req, json.fileUrl),
+      };
+    });
+
+    res.status(200).json({ success: true, data });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// 🔴 Delete Template by ID
 exports.deleteTemplate = async (req, res) => {
   try {
     const { id } = req.params;
@@ -52,11 +106,8 @@ exports.deleteTemplate = async (req, res) => {
     if (!template) {
       return res.status(404).json({ success: false, message: 'Template not found' });
     }
-    console.log("yha tk code chla");
-    // Delete file from S3 if exists
-    await deleteFileFromS3(template.fileUrl);
-    console.log("checkpoint 2");
-    // Delete row from DB
+
+    deleteLocalUploadedFile(template.fileUrl);
     await template.destroy();
 
     res.json({ success: true, message: 'Template deleted successfully' });

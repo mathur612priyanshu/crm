@@ -21,7 +21,7 @@ app.use(cors());
 // createBucketIfNotExists();
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const port = 5000 || process.env.PORT;
+const port = process.env.PORT || 3006;
 
 
 app.use(bodyParser.json());

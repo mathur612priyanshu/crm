@@ -129,9 +129,10 @@ const UserList = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           {" "}
           <div className=" p-6 rounded w-1/3">
-            <AddUser
-              handleCloseaddcallformModal={handleCloseaddcallformModal}
-            />
+              <AddUser
+                handleCloseaddcallformModal={handleCloseaddcallformModal}
+                onCreated={() => fetchUsers(currentPage, searchTerm)}
+              />
           </div>
         </div>
       )}
@@ -189,6 +190,12 @@ const UserList = () => {
                 Phonenumber
               </th>
               <th className="p-4 text-left text-xs font-semibold text-gray-800">
+                Role
+              </th>
+              <th className="p-4 text-left text-xs font-semibold text-gray-800">
+                Status
+              </th>
+              <th className="p-4 text-left text-xs font-semibold text-gray-800">
                 Password
               </th>
               <th className="p-4 text-left text-xs font-semibold text-gray-800">
@@ -208,6 +215,12 @@ const UserList = () => {
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800">{user.ename}</td>
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800">{user.email}</td>
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800">{user.phone}</td>
+                <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800 capitalize">
+                  {user.role || "calling"}
+                </td>
+                <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800 capitalize">
+                  {user.status || "active"}
+                </td>
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800">
                   {user.password}
                 </td>
@@ -290,7 +303,7 @@ const UserList = () => {
         <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-md w-80">
             <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
-            <p className="mb-4">Are you sure you want to delete <strong>{selectedUser.name}</strong>?</p>
+            <p className="mb-4">Are you sure you want to delete <strong>{selectedUser.ename}</strong>?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -352,6 +365,23 @@ const UserList = () => {
           className="w-full border px-3 py-2 rounded"
           placeholder="Password"
         />
+        <select
+          defaultValue={selectedUser.role || "calling"}
+          onChange={(e) => selectedUser.role = e.target.value}
+          className="w-full border px-3 py-2 rounded"
+        >
+          <option value="calling">Calling Employee</option>
+          <option value="manager">Manager</option>
+          <option value="operations">Operations Employee</option>
+        </select>
+        <select
+          defaultValue={selectedUser.status || "active"}
+          onChange={(e) => selectedUser.status = e.target.value}
+          className="w-full border px-3 py-2 rounded"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
         <div className="flex justify-end gap-3">
           <button
             type="button"

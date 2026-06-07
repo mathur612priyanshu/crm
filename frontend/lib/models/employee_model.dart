@@ -5,6 +5,8 @@ class Employee {
   final phone;
   final ename;
   final password;
+  final role;
+  final status;
 
   Employee({
     this.empId,
@@ -13,6 +15,8 @@ class Employee {
     this.phone,
     this.ename,
     this.password,
+    this.role,
+    this.status,
   });
 
   factory Employee.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class Employee {
       phone: json['phone'],
       ename: json['ename'],
       password: json['password'],
+      role: json['role'],
+      status: json['status'],
     );
   }
 
@@ -32,6 +38,8 @@ class Employee {
     if (phone != null) json['phone'] = phone;
     if (ename != null) json['ename'] = ename;
     if (password != null) json['password'] = password;
+    if (role != null) json['role'] = role;
+    if (status != null) json['status'] = status;
     return json;
   }
 }

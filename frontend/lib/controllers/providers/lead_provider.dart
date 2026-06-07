@@ -25,6 +25,10 @@ class LeadProvider with ChangeNotifier {
     return await ApiService.getFreshLeads();
   }
 
+  Future<Map<String, dynamic>> get unassignedFreshLeadPool async {
+    return await ApiService.getUnassignedFreshLeadPool();
+  }
+
   bool get isLoading => _isLoading;
 
   Future<void> fetchLeads({DateTime? start, DateTime? end}) async {
@@ -84,6 +88,24 @@ class LeadProvider with ChangeNotifier {
     } finally {
       notifyListeners();
     }
+  }
+
+  Future<Map<String, dynamic>> assignUnassignedFreshLeads(int count) async {
+    final result = await ApiService.assignUnassignedFreshLeads(count);
+    final List<Leads> assignedLeads = result["leads"] ?? [];
+
+    for (final lead in assignedLeads) {
+      final index = _leads.indexWhere((item) => item.lead_id == lead.lead_id);
+      if (index == -1) {
+        _leads.insert(0, lead);
+      } else {
+        _leads[index] = lead;
+      }
+    }
+
+    _totalLeadsCount += assignedLeads.length;
+    notifyListeners();
+    return result;
   }
 
   Future<int> addLead(Leads newLead) async {

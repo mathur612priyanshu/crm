@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'package:capital_care/controllers/providers/history_provider.dart';
 import 'package:capital_care/controllers/providers/lead_provider.dart';
-import 'package:capital_care/models/history_model.dart';
 import 'package:capital_care/models/leads_model.dart';
 import 'package:capital_care/services/api_service.dart';
 import 'package:capital_care/theme/appcolors.dart';
@@ -136,7 +134,6 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   List<String> loanTerm = ["Monthly", "Yearly"];
 
   void handleSubmit() async {
-    int idOfLead;
     if (contactNameController.text.isEmpty ||
         contactNumberController.text.isEmpty) {
       ScaffoldMessenger.of(
@@ -175,11 +172,10 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
           return;
         }
         // print("==============================>${oldLead.lead_id}");
-        int newLeadId = await Provider.of<LeadProvider>(
+        await Provider.of<LeadProvider>(
           context,
           listen: false,
         ).addLead(lead);
-        idOfLead = newLeadId;
       } else {
         if (oldLead.lead_id != widget.lead_id) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -193,21 +189,8 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
           context,
           listen: false,
         ).updateLead(lead, widget.lead_id);
-        idOfLead = widget.lead_id;
       }
-      // print("=======================================> $UpdaidOfLead");
-      History newHistory = History(
-        lead_id: idOfLead,
-        owner: ownerController.text,
-        next_meeting: nextMeetingTimeController.text,
-        status: statusController.text,
-        loanType: loanTypeController.text,
-        remark: remarkController.text,
-      );
-      Provider.of<HistoryProvider>(
-        context,
-        listen: false,
-      ).addHistory(newHistory);
+      // Backend creates the lead history entry so employee, status and time stay consistent.
       // bool success1 =
       //     widget.title == "Add Lead"
       //         ? await ApiService.addLead(lead)
@@ -251,6 +234,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    loadLeadStatuses();
     ownerController.text = widget.userName;
     levelController.text = "Lower";
 
@@ -278,6 +262,23 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
     // LoanTermController.text = widget.loanTerm == null ? "" : widget.loanTerm;
     employmentTypeController.text =
         widget.employmentType == null ? "" : widget.employmentType;
+  }
+
+  Future<void> loadLeadStatuses() async {
+    try {
+      final role = await ApiService.secureStorage.read(key: "userRole");
+      final statuses = await ApiService.fetchLeadStatuses(
+        team: role == "operations" ? "operations" : "calling",
+      );
+
+      if (statuses.isNotEmpty && mounted) {
+        setState(() {
+          statusOptions = statuses;
+        });
+      }
+    } catch (error) {
+      print("Error loading lead statuses: $error");
+    }
   }
 
   @override

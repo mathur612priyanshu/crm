@@ -19,6 +19,8 @@ import Login from "./screens/login/login";
 import ProtectedRoute from "./protectedRoute";
 import PerformanceScreen from "./screens/performance/performanceScreen";
 import LeadsReport from "./screens/leadReport/leadReportScreen";
+import LeadStatusesScreen from "./screens/leadStatuses/leadStatusesScreen";
+import OperationsScreen from "./screens/operations/operationsScreen";
 
 const Layout = () => {
   const location = useLocation();
@@ -40,7 +42,7 @@ const Layout = () => {
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <Home />
               </ProtectedRoute>
             }
@@ -48,7 +50,7 @@ const Layout = () => {
           <Route
             path="/leads"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <LeadsList />
               </ProtectedRoute>
             }
@@ -56,7 +58,7 @@ const Layout = () => {
           <Route
             path="/add-users"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <UserList />
               </ProtectedRoute>
             }
@@ -64,7 +66,7 @@ const Layout = () => {
           <Route
             path="/lead-details/:id"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager", "operations"]}>
                 <LeadDetailScreen />
               </ProtectedRoute>
             }
@@ -72,7 +74,7 @@ const Layout = () => {
           <Route
             path="/attendance"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <AttendanceScreen />
               </ProtectedRoute>
             }
@@ -80,7 +82,7 @@ const Layout = () => {
           <Route
             path="/userdetail/:emp_id"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <UserDetailScreen />
               </ProtectedRoute>
             }
@@ -88,7 +90,7 @@ const Layout = () => {
           <Route
             path="/tasks"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <TaskScreen />
               </ProtectedRoute>
             }
@@ -96,15 +98,31 @@ const Layout = () => {
           <Route
             path="/template"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <TemplateScreen />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lead-statuses"
+            element={
+              <ProtectedRoute allowedRoles={["manager"]}>
+                <LeadStatusesScreen />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/operations"
+            element={
+              <ProtectedRoute allowedRoles={["manager", "operations"]}>
+                <OperationsScreen />
               </ProtectedRoute>
             }
           />
           <Route
             path="/performance"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <PerformanceScreen />
               </ProtectedRoute>
             }
@@ -112,7 +130,7 @@ const Layout = () => {
           <Route
             path="/lead_report"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["manager"]}>
                 <LeadsReport />
               </ProtectedRoute>
             }

@@ -1,6 +1,13 @@
 // models/employee.js
 const { DataTypes, INTEGER, STRING } = require("sequelize");
 const sequelize = require("../config/database");
+const {
+  EMPLOYEE_ROLE_VALUES,
+  EMPLOYEE_ROLES,
+  EMPLOYEE_STATUS_VALUES,
+  EMPLOYEE_STATUSES,
+} = require("../constants/employeeRoles");
+
 const Employee = sequelize.define(
   "Employee",
   {
@@ -33,6 +40,16 @@ const Employee = sequelize.define(
     password: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    role: {
+      type: DataTypes.ENUM(...EMPLOYEE_ROLE_VALUES),
+      allowNull: false,
+      defaultValue: EMPLOYEE_ROLES.CALLING,
+    },
+    status: {
+      type: DataTypes.ENUM(...EMPLOYEE_STATUS_VALUES),
+      allowNull: false,
+      defaultValue: EMPLOYEE_STATUSES.ACTIVE,
     },
   },
   {

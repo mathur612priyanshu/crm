@@ -17,15 +17,24 @@ function Login() {
         password,
       });
 
-      const { ename, email } = response.data.employee; // ✅ based on your API response
+      const { emp_id, ename, email, role, canAccessAdminPanel } = response.data.employee;
+
+      if (!canAccessAdminPanel || role === "calling") {
+        localStorage.clear();
+        alert("Calling employees cannot access the admin panel.");
+        return;
+      }
 
       // Save data to localStorage
       localStorage.setItem("isLogin", "true");
       localStorage.setItem("name", ename);
       localStorage.setItem("email", email);
+      localStorage.setItem("employeeId", emp_id);
+      localStorage.setItem("employeeRole", role);
+      localStorage.setItem("token", response.data.token);
 
       console.log("Login successful");
-      navigate("/"); // redirect to home or dashboard
+      navigate(role === "operations" ? "/operations" : "/");
 
     } catch (error) {
       console.error("Login failed", error);

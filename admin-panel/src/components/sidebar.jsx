@@ -1,22 +1,31 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path) => location.pathname === path;
+  const employeeRole = localStorage.getItem("employeeRole");
 
-  const navItems = [
+  const managerNavItems = [
     { path: "/", label: "Dashboard", icon: "home" },
     { path: "/leads", label: "Leads", icon: "document" },
     { path: "/add-users", label: "Add Employees", icon: "user-add" },
     { path: "/attendance", label: "Attendance", icon: "calendar" },
     { path: "/tasks", label: "Tasks", icon: "task" },
     { path: "/template", label: "Template", icon: "template" },
+    { path: "/lead-statuses", label: "Lead Statuses", icon: "lead_report" },
+    { path: "/operations", label: "Operations", icon: "operations" },
     { path: "/performance", label: "Performance Report", icon: "performance" },
     { path: "/lead_report", label: "Lead Report", icon: "lead_report" },
     { path: "/logout", label: "Logout", icon: "logout" },
   ];
+  const operationsNavItems = [
+    { path: "/operations", label: "Operations", icon: "operations" },
+    { path: "/logout", label: "Logout", icon: "logout" },
+  ];
+  const navItems = employeeRole === "operations" ? operationsNavItems : managerNavItems;
 
   const getIcon = (icon) => {
     switch (icon) {
@@ -48,6 +57,7 @@ const Sidebar = () => {
       case "template":
       case "performance":
       case "lead_report":
+      case "operations":
         return (
           <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10m-12 8h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -67,12 +77,16 @@ const Sidebar = () => {
   // 👇 fetch from localStorage
   const name = localStorage.getItem("name") || "Guest";
   const email = localStorage.getItem("email") || "No email";
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <nav className="bg-[#1e293b] text-white h-screen fixed top-0 left-0 min-w-[250px] py-6 px-4 font-[sans-serif] shadow-lg z-40">
       <div className="relative">
         <div className="w-full flex items-center justify-center mb-8">
-          <Link to="/">
+          <Link to={employeeRole === "operations" ? "/operations" : "/"}>
             <div className="flex items-center justify-center bg-white p-2 rounded-lg">
               <img src="/logo.png" alt="logo" className="w-[160px] object-contain" />
             </div>
@@ -84,17 +98,28 @@ const Sidebar = () => {
         <ul className="space-y-2">
           {navItems.map(({ path, label, icon }) => (
             <li key={path}>
-              <Link
-                to={path}
+              {path === "/logout" ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center rounded-lg px-4 py-3 transition-all text-blue-100 hover:bg-blue-700 hover:text-white"
+                >
+                  {getIcon(icon)}
+                  <span className="text-sm font-medium">{label}</span>
+                </button>
+              ) : (
+                <Link
+                  to={path}
                 className={`flex items-center rounded-lg px-4 py-3 transition-all ${
                   isActive(path)
                     ? "bg-blue-600 text-white shadow-md"
                     : "text-blue-100 hover:bg-blue-700 hover:text-white"
                 }`}
-              >
-                {getIcon(icon)}
-                <span className="text-sm font-medium">{label}</span>
-              </Link>
+                >
+                  {getIcon(icon)}
+                  <span className="text-sm font-medium">{label}</span>
+                </Link>
+              )}
             </li>
           ))}
         </ul>

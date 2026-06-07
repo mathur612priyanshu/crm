@@ -1,6 +1,7 @@
 const {DataTypes} = require("sequelize");
 const sequelize = require("../config/database");
-const Lead = require("../models/leadModel");
+const LeadStatus = require("../models/leadStatusModel");
+const Employee = require("../models/employeesModel");
 
 const History = sequelize.define(
     "History",
@@ -14,13 +15,17 @@ const History = sequelize.define(
             type : DataTypes.INTEGER,
             allowNull : false
         },
-        owner:{
-            type : DataTypes.STRING
-        },
         next_meeting:{
             type : DataTypes.DATE
         },
-        status:{
+        status_id:{
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        previous_status_id: {
+            type: DataTypes.INTEGER
+        },
+        changed_by_emp_id: {
             type: DataTypes.STRING
         },
         loanType: {
@@ -35,6 +40,21 @@ const History = sequelize.define(
     timestamps: true,
   }
 );
+
+History.belongsTo(LeadStatus, {
+    foreignKey: "status_id",
+    as: "statusDetails",
+});
+
+History.belongsTo(LeadStatus, {
+    foreignKey: "previous_status_id",
+    as: "previousStatusDetails",
+});
+
+History.belongsTo(Employee, {
+    foreignKey: "changed_by_emp_id",
+    as: "changedBy",
+});
 
     History.sync({alter : false}).then(()=> {
         console.log("History table created")

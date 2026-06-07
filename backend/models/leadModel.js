@@ -2,6 +2,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Employee = require("../models/employeesModel");
+const LeadStatus = require("../models/leadStatusModel");
 
 
 const Lead = sequelize.define(
@@ -47,8 +48,8 @@ const Lead = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    status: {
-      type: DataTypes.STRING,
+    status_id: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
     next_meeting: {
@@ -94,6 +95,11 @@ const Lead = sequelize.define(
     timestamps: true,
   }
 );
+
+Lead.belongsTo(LeadStatus, {
+  foreignKey: "status_id",
+  as: "statusDetails",
+});
 
 // Create table if not exists
 Lead.sync({ alter: false })

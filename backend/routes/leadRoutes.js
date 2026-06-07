@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const leadController = require('../controllers/leadController');
+const { isAuthenticated } = require('../middlewares/isAuthenticated');
 const upload = require('../middlewares/upload');
 
-router.post('/submit-lead', leadController.addLead);
+router.post('/submit-lead', isAuthenticated, leadController.addLead);
 router.get('/leads', leadController.getLeads);
+router.get('/unassigned-fresh-leads', leadController.getUnassignedFreshLeads);
+router.post('/assign-unassigned-fresh-leads/:emp_id', leadController.assignUnassignedFreshLeads);
 router.get('/leads/:emp_id', leadController.getLeadsById);
-router.put('/leads/:id', leadController.updateLead);
+router.put('/leads/:id', isAuthenticated, leadController.updateLead);
 router.delete('/delete-lead/:id', leadController.deleteLead);
 router.get('/getLead/:id', leadController.getLeadDetails);
 router.get('/getLeadsByDate', leadController.leadsByDate);

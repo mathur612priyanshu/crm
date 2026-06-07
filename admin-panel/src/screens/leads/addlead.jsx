@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import API_URL from "../../config";
 
-const AddLead = ({ handleCloseaddcallformModal, employees = [] }) => {
+const AddLead = ({ handleCloseaddcallformModal, onCreated }) => {
   const [formData, setFormData] = useState({
     name: "",
     contact: "",
@@ -10,7 +10,6 @@ const AddLead = ({ handleCloseaddcallformModal, employees = [] }) => {
   const [error, setError] = useState("");
 
   const [excelFile, setExcelFile] = useState(null);
-  const [selectedEmployee, setSelectedEmployee] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,6 +40,7 @@ const AddLead = ({ handleCloseaddcallformModal, employees = [] }) => {
 
       await response.json();
       setFormData({ name: "", contact: "" });
+      onCreated?.();
       handleCloseaddcallformModal();
     } catch (err) {
       setError(err.message || "Something went wrong");
@@ -50,14 +50,13 @@ const AddLead = ({ handleCloseaddcallformModal, employees = [] }) => {
   };
 
   const handleExcelUpload = async () => {
-    if (!excelFile || !selectedEmployee) {
-      alert("Please select both file and employee");
+    if (!excelFile) {
+      alert("Please select an Excel file");
       return;
     }
 
     const formDataToSend = new FormData();
     formDataToSend.append("file", excelFile);
-    formDataToSend.append("userid", selectedEmployee);
 
     setIsLoading(true);
     try {
@@ -71,7 +70,7 @@ const AddLead = ({ handleCloseaddcallformModal, employees = [] }) => {
       const result = await response.json();
       alert(result.message || "Leads uploaded successfully");
       setExcelFile(null);
-      setSelectedEmployee("");
+      onCreated?.();
       handleCloseaddcallformModal();
     } catch (err) {
       alert(err.message || "Upload failed");
@@ -148,19 +147,6 @@ const AddLead = ({ handleCloseaddcallformModal, employees = [] }) => {
             onChange={(e) => setExcelFile(e.target.files[0])}
             className="w-full border px-3 py-2 rounded-md"
           />
-
-          <select
-            value={selectedEmployee}
-            onChange={(e) => setSelectedEmployee(e.target.value)}
-            className="w-full border px-3 py-2 rounded-md"
-          >
-            <option value="">Assign To</option>
-            {employees.map((emp) => (
-              <option key={emp.emp_id} value={emp.emp_id}>
-                {emp.emp_id} - {emp.ename || emp.username}
-              </option>
-            ))}
-          </select>
 
           <button
             type="button"

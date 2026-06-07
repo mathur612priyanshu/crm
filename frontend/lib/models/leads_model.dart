@@ -75,6 +75,7 @@ class Leads {
   factory Leads.fromJson(Map<String, dynamic> json) {
     return Leads(
       lead_id: json['lead_id'],
+      person_id: json['person_id'] ?? "",
       name: json['name'] ?? "",
       number: json['number'] ?? "",
       owner: json['owner'] ?? "",

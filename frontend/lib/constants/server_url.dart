@@ -1,2 +1,3 @@
 // const ServerUrl = "http://192.168.29.215:5000/api";
-const ServerUrl = "http://51.20.76.55:5000/api";
+// const ServerUrl = "http://192.168.184.105:5001/api";
+const ServerUrl = "http://72.62.197.59:3006/api";

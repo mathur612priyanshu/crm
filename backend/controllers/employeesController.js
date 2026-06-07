@@ -4,16 +4,51 @@ const nodemailer = require("nodemailer");
 const { Op } = require("sequelize");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const {
+  EMPLOYEE_ROLES,
+  EMPLOYEE_STATUSES,
+  EMPLOYEE_ROLE_VALUES,
+  EMPLOYEE_STATUS_VALUES,
+} = require("../constants/employeeRoles");
 
 const SECRETE_KEY = process.env.SECRET_KEY;
 
-exports.addEmployee = async (req, res) => {
-  const { emp_id, email, username, ename, password, phone} = req.body;
+const ADMIN_PANEL_ROLES = [EMPLOYEE_ROLES.MANAGER, EMPLOYEE_ROLES.OPERATIONS];
 
-  if (!username || !password) {
+const normalizeRole = (role) => {
+  const normalizedRole = String(role || "").trim().toLowerCase();
+  const roleAliases = {
+    "calling employee": EMPLOYEE_ROLES.CALLING,
+    caller: EMPLOYEE_ROLES.CALLING,
+    "operations employee": EMPLOYEE_ROLES.OPERATIONS,
+    operation: EMPLOYEE_ROLES.OPERATIONS,
+    admin: EMPLOYEE_ROLES.MANAGER,
+  };
+
+  if (roleAliases[normalizedRole]) {
+    return roleAliases[normalizedRole];
+  }
+
+  return EMPLOYEE_ROLE_VALUES.includes(normalizedRole)
+    ? normalizedRole
+    : EMPLOYEE_ROLES.CALLING;
+};
+
+const normalizeStatus = (status) => {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  return EMPLOYEE_STATUS_VALUES.includes(normalizedStatus)
+    ? normalizedStatus
+    : EMPLOYEE_STATUSES.ACTIVE;
+};
+
+exports.addEmployee = async (req, res) => {
+  const { emp_id, email, username, ename, password, phone, role, status } =
+    req.body;
+
+  if (!emp_id || !email || !phone || !username || !ename || !password) {
     return res
       .status(400)
-      .json({ message: "username and password are required" });
+      .json({ message: "All employee fields are required" });
   }
 
   try {
@@ -24,6 +59,8 @@ exports.addEmployee = async (req, res) => {
       username,
       ename,
       password,
+      role: normalizeRole(role),
+      status: normalizeStatus(status),
     });
 
     return res.status(200).json({
@@ -51,6 +88,7 @@ exports.getEmployees = async (req, res) => {
             { emp_id: { [Op.like]: `%${search}%` } },
             { phone: { [Op.like]: `%${search}%` } },
             { username: { [Op.like]: `%${search}%` } },
+            { role: { [Op.like]: `%${search}%` } },
           ],
         }
       : {};
@@ -112,6 +150,7 @@ exports.createuserusingexcel = async (req, res) => {
         Name: name,
         "Mobile Number": phone,
         "Email Id": email,
+        Role: role,
       } = row;
       const password = Math.floor(
         10000000 + Math.random() * 90000000
@@ -125,6 +164,8 @@ exports.createuserusingexcel = async (req, res) => {
         email,
         username: employeeId,
         password: password,
+        role: normalizeRole(role),
+        status: EMPLOYEE_STATUSES.ACTIVE,
       });
       // const mailOptions = {
       //   from: process.env.EMAIL_USER,
@@ -180,8 +221,12 @@ exports.loginEmployee = async (req, res) => {
       return res.status(401).json({ message: "Invalid username or password" });
     }
 
+    if (employee.status !== EMPLOYEE_STATUSES.ACTIVE) {
+      return res.status(403).json({ message: "Employee account is inactive" });
+    }
+
     const token = jwt.sign(
-      { id: employee.emp_id, username: employee.username },
+      { id: employee.emp_id, username: employee.username, role: employee.role },
       SECRETE_KEY,
       { expiresIn: "30d" }
     );
@@ -194,6 +239,9 @@ exports.loginEmployee = async (req, res) => {
         username: employee.username,
         email: employee.email,
         ename: employee.ename,
+        role: employee.role,
+        status: employee.status,
+        canAccessAdminPanel: ADMIN_PANEL_ROLES.includes(employee.role),
       },
     });
   } catch (e) {
@@ -222,9 +270,15 @@ exports.getEmployeeById = async (req, res) => {
 
 exports.updateEmployee = async (req, res) =>{
   const userId = req.params.id;
-  const updateData = req.body; 
+  const updateData = { ...req.body };
   if(!userId) {
     return res.status(400).json({ message: 'Employee ID is required' });
+  }
+  if (updateData.role) {
+    updateData.role = normalizeRole(updateData.role);
+  }
+  if (updateData.status) {
+    updateData.status = normalizeStatus(updateData.status);
   }
   try{
       const [updated] = await Employee.update(updateData, {

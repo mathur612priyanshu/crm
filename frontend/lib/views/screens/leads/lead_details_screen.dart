@@ -510,10 +510,17 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "User : ${entry.owner ?? ''}",
+                                  "Updated by : ${entry.changedBy ?? entry.changedByEmpId ?? ''}",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 SizedBox(height: 4),
+                                if ((entry.previousStatus ?? '').isNotEmpty)
+                                  Text(
+                                    "From: ${entry.previousStatus}",
+                                    style: TextStyle(color: Colors.black54),
+                                  ),
+                                if ((entry.previousStatus ?? '').isNotEmpty)
+                                  SizedBox(height: 2),
                                 RichText(
                                   text: TextSpan(
                                     children: [

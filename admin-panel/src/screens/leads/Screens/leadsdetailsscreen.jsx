@@ -35,23 +35,31 @@ const downloadexcel = () => {
   }));
 
   // Prepare history data
-  const historyData = histories.map((item) => ({
-    "Updated By": item.owner || "N/A",
-    "Next Meeting": item.next_meeting 
-      ? new Date(item.next_meeting).toLocaleString("en-IN", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-      : "N/A",
-    "Status": item.status || "N/A",
-    "Remark": item.remark || "N/A",
-    "Updated At": item.createdAt
-      ? new Date(item.createdAt).toLocaleString("en-IN", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-      : "N/A",
-  }));
+  const historyData = histories.map((item) => {
+    const updatedBy = item.changedBy?.ename || item.changed_by_emp_id || item.owner || "N/A";
+    const statusName = item.statusDetails?.name || item.status || "N/A";
+    const previousStatus = item.previousStatusDetails?.name || item.previous_status_id || "N/A";
+
+    return {
+      "Updated By": updatedBy,
+      "Updated By ID": item.changed_by_emp_id || "N/A",
+      "From Status": previousStatus,
+      "To Status": statusName,
+      "Next Meeting": item.next_meeting 
+        ? new Date(item.next_meeting).toLocaleString("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        : "N/A",
+      "Remark": item.remark || "N/A",
+      "Updated At": item.createdAt
+        ? new Date(item.createdAt).toLocaleString("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        : "N/A",
+    };
+  });
 
   // Create workbook with multiple sheets
   const wb = XLSX.utils.book_new();
@@ -268,23 +276,30 @@ const downloadexcel = () => {
             <table className="table-auto w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-200">
-                  <th className="border px-4 py-2">By</th>
+                  <th className="border px-4 py-2">Updated By</th>
+                  <th className="border px-4 py-2">From Status</th>
+                  <th className="border px-4 py-2">To Status</th>
                   <th className="border px-4 py-2">Next Meeting</th>
-                  <th className="border px-4 py-2">Status</th>
                   <th className="border px-4 py-2">Remark</th>
                   <th className="border px-4 py-2">At</th>
                 </tr>
               </thead>
               <tbody>
-                {histories.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="border px-4 py-2">{item.owner || "N/A"}</td>
-                    <td className="border px-4 py-2">{item.next_meeting ? new Date(item.next_meeting).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "--"}</td>
-                    <td className="border px-4 py-2">{item.status || "--"}</td>
-                    <td className="border px-4 py-2">{item.remark || "--"}</td>
-                    <td className="border px-4 py-2">{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "--"}</td>
-                  </tr>
-                ))}
+                {histories.map((item, index) => {
+                  const updatedBy = item.changedBy?.ename || item.changed_by_emp_id || item.owner || "N/A";
+                  const statusName = item.statusDetails?.name || item.status || "--";
+                  const previousStatus = item.previousStatusDetails?.name || item.previous_status_id || "--";
+                  return (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="border px-4 py-2">{updatedBy}</td>
+                      <td className="border px-4 py-2">{previousStatus}</td>
+                      <td className="border px-4 py-2">{statusName}</td>
+                      <td className="border px-4 py-2">{item.next_meeting ? new Date(item.next_meeting).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "--"}</td>
+                      <td className="border px-4 py-2">{item.remark || "--"}</td>
+                      <td className="border px-4 py-2">{item.createdAt ? new Date(item.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "--"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           

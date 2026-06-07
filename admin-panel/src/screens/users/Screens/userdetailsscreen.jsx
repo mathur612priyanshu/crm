@@ -143,6 +143,14 @@ const UserDetailScreen = () => {
                 <p className="text-gray-600">Password</p>
                 <p className="font-medium">{employee.password}</p>
               </div>
+              <div>
+                <p className="text-gray-600">Role</p>
+                <p className="font-medium capitalize">{employee.role || "calling"}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Status</p>
+                <p className="font-medium capitalize">{employee.status || "active"}</p>
+              </div>
             </div>
           </div>
         </div>

@@ -68,6 +68,10 @@ class ApiService {
         value: Employee.fromJson(userJson).empId,
       );
       await secureStorage.write(
+        key: "userRole",
+        value: Employee.fromJson(userJson).role ?? "",
+      );
+      await secureStorage.write(
         key: "loginTime",
         value: DateTime.now().toIso8601String(),
       );
@@ -76,6 +80,27 @@ class ApiService {
     } else {
       throw Exception('Login failed: ${response.body}');
     }
+  }
+
+  static Future<List<String>> fetchLeadStatuses({String? team}) async {
+    final queryParameters = <String, String>{};
+    if (team != null && team.isNotEmpty) {
+      queryParameters["team"] = team;
+    }
+
+    final url = Uri.parse(
+      "$baseUrl/lead-statuses",
+    ).replace(queryParameters: queryParameters);
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final statuses = data["statuses"] as List;
+      return statuses.map((status) => status["name"].toString()).toList();
+    }
+
+    throw Exception("Failed to fetch lead statuses: ${response.body}");
   }
 
   static Future<List<Leads>> fetchLeads(
@@ -128,9 +153,14 @@ class ApiService {
     final url = Uri.parse(
       "$baseUrl/leads/$id",
     ); // assuming backend uses /leads/:id
+    final token = await secureStorage.read(key: "auth_token");
+    final headers = {
+      "Content-Type": "application/json",
+      if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+    };
     final response = await http.put(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: headers,
       body: jsonEncode(lead.toJson()),
     );
 
@@ -183,6 +213,54 @@ class ApiService {
       print("${response.statusCode} error fetching fresh leads");
       return [];
     }
+  }
+
+  static Future<Map<String, dynamic>> getUnassignedFreshLeadPool() async {
+    final url = Uri.parse("$baseUrl/unassigned-fresh-leads");
+    final response = await http.get(
+      url,
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonData = jsonDecode(response.body);
+      final List leadsJson = jsonData["leads"] ?? [];
+      return {
+        "leads": leadsJson.map((json) => Leads.fromJson(json)).toList(),
+        "availableCount": jsonData["availableCount"] ?? 0,
+        "maxAssignable": jsonData["maxAssignable"] ?? 50,
+      };
+    }
+
+    throw Exception("Failed to fetch unassigned fresh leads: ${response.body}");
+  }
+
+  static Future<Map<String, dynamic>> assignUnassignedFreshLeads(
+    int count,
+  ) async {
+    final empId = await secureStorage.read(key: "userId");
+    final url = Uri.parse("$baseUrl/assign-unassigned-fresh-leads/$empId");
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"count": count}),
+    );
+
+    final Map<String, dynamic> jsonData =
+        response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      final List leadsJson = jsonData["leads"] ?? [];
+      return {
+        "message": jsonData["message"] ?? "Leads assigned successfully",
+        "assignedCount": jsonData["assignedCount"] ?? 0,
+        "availableCount": jsonData["availableCount"] ?? 0,
+        "maxAssignable": jsonData["maxAssignable"] ?? 50,
+        "leads": leadsJson.map((json) => Leads.fromJson(json)).toList(),
+      };
+    }
+
+    throw Exception(jsonData["message"] ?? "Failed to assign leads");
   }
 
   static Future<Leads> getLeadByLeadId(var leadId) async {

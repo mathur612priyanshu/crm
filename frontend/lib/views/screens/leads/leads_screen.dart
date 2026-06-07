@@ -78,15 +78,13 @@ class _LeadsScreenState extends State<LeadsScreen> {
     final user = Provider.of<UserProvider>(context).user;
 
     final filteredLeads =
-        leads.where((lead) {
+      leads.where((lead) {
           final matchesLoan =
               loanSelectedItem == "All" || lead.loanType == loanSelectedItem;
 
-          final matchesStatus =
-              selectedStatusItem == "All"
-                  ? lead.status !=
-                      "Fresh Lead" // 🟢 All selected → skip Fresh
-                  : lead.status == selectedStatusItem;
+        final matchesStatus = selectedStatusItem == "All"
+          ? true
+          : lead.status == selectedStatusItem;
 
           final matchesSearch =
               searchQuery.isEmpty ||

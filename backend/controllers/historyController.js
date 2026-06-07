@@ -1,4 +1,6 @@
 const History = require("../models/historyModel");
+const LeadStatus = require("../models/leadStatusModel");
+const Employee = require("../models/employeesModel");
 
 exports.addHistory = async (req, res) => {
     const { lead_id } = req.body;
@@ -22,6 +24,11 @@ exports.getHistory = async (req, res) => {
     try {
         const historyData = await History.findAll({
             where: { lead_id: id },
+            include: [
+                { model: LeadStatus, as: "statusDetails", attributes: ["name"] },
+                { model: LeadStatus, as: "previousStatusDetails", attributes: ["name"] },
+                { model: Employee, as: "changedBy", attributes: ["emp_id", "ename"] },
+            ],
             order: [['createdAt', 'DESC']],
         });
 

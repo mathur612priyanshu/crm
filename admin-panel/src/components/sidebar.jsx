@@ -25,7 +25,16 @@ const Sidebar = () => {
     { path: "/operations", label: "Operations", icon: "operations" },
     { path: "/logout", label: "Logout", icon: "logout" },
   ];
-  const navItems = employeeRole === "operations" ? operationsNavItems : managerNavItems;
+  const defaultNavItems = [
+    { path: "/logout", label: "Logout", icon: "logout" },
+  ];
+
+  const navItems =
+    employeeRole === "operations"
+      ? operationsNavItems
+      : employeeRole === "manager"
+      ? managerNavItems
+      : defaultNavItems;
 
   const getIcon = (icon) => {
     switch (icon) {

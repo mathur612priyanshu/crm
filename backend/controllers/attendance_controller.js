@@ -304,7 +304,8 @@ const autoCloseAttendances = async () => {
 
 const getMonthlyAttendance = async (req, res) => {
   try {
-    const { startDate, endDate, userId, month } = req.query;
+    const { startDate, endDate, userId } = req.query;
+    const month = req.query.month || req.params.month;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 31;
     const offset = (page - 1) * limit;

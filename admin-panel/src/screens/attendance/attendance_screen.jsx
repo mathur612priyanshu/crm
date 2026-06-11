@@ -105,7 +105,7 @@ const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
         const response = await axios.get(
           `${API_URL}/monthlyattendance/${selectedMonth}`
         );
-        setAttendanceData(response.data.attendance);
+        setAttendanceData(response.data.data || response.data.attendance || []);
         
       } catch (error) {
         console.error("Error fetching attendance data", error);

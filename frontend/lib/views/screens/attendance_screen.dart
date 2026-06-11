@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:capital_care/constants/server_url.dart';
+import 'package:capital_care/services/api_service.dart';
 import 'package:capital_care/theme/appcolors.dart';
 import 'package:capital_care/views/screens/my_attendance_screen.dart';
 import 'package:flutter/material.dart';
@@ -217,14 +218,29 @@ class _AttendancescreenState extends State<Attendancescreen> {
       desiredAccuracy: LocationAccuracy.high,
     );
 
+    double defaultLat = 28.583967;
+    double defaultLng = 77.313246;
+    double allowedRadius = 20.0;
+
+    try {
+      final settings = await ApiService.fetchSettings();
+      if (settings != null && settings['office_location'] != null) {
+        defaultLat = (settings['office_location']['lat'] as num).toDouble();
+        defaultLng = (settings['office_location']['lng'] as num).toDouble();
+        allowedRadius = (settings['office_location']['radius'] as num).toDouble();
+      }
+    } catch (e) {
+      print("Could not parse dynamic settings: $e");
+    }
+
     double distanceInMeters = Geolocator.distanceBetween(
-      28.583967,
-      77.313246,
+      defaultLat,
+      defaultLng,
       position.latitude,
       position.longitude,
     );
 
-    if (distanceInMeters <= 20) {
+    if (distanceInMeters <= allowedRadius) {
       if (isAttendanceMarked) {
         await _closeAttendance();
       } else {
@@ -232,8 +248,49 @@ class _AttendancescreenState extends State<Attendancescreen> {
       }
     } else {
       setState(() {
-        attendanceStatus = 'You are not within 20 meters of office.';
+        attendanceStatus = 'You are not within ${allowedRadius.toInt()} meters of office.';
       });
+    }
+  }
+
+  Future<void> _handleMarkAttendancePress() async {
+    setState(() => isLoading = true);
+    
+    // Default fallback values
+    int inTimeHour = 10;
+    int inTimeMinute = 0;
+    int lateBuffer = 10;
+
+    try {
+      final settings = await ApiService.fetchSettings();
+      if (settings != null && settings['office_timings'] != null) {
+        final inTimeStr = settings['office_timings']['in_time'] as String; // e.g., "10:00"
+        final parts = inTimeStr.split(':');
+        if (parts.length >= 2) {
+          inTimeHour = int.tryParse(parts[0]) ?? 10;
+          inTimeMinute = int.tryParse(parts[1]) ?? 0;
+        }
+        lateBuffer = (settings['office_timings']['late_buffer'] as num?)?.toInt() ?? 10;
+      }
+    } catch (e) {
+      print("Could not fetch late settings: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
+
+    DateTime currentNow = DateTime.now();
+    DateTime lateThreshold = DateTime(
+      currentNow.year,
+      currentNow.month,
+      currentNow.day,
+      inTimeHour,
+      inTimeMinute,
+    ).add(Duration(minutes: lateBuffer));
+
+    if (currentNow.isAfter(lateThreshold)) {
+      _customDialog();
+    } else {
+      _checkLocationAndMarkAttendance();
     }
   }
 
@@ -479,11 +536,7 @@ class _AttendancescreenState extends State<Attendancescreen> {
                               ? null
                               : isAttendanceMarked
                               ? _showConfirmationDialog
-                              : (now.hour > 10)
-                              ? _customDialog
-                              : (now.hour == 10 && now.minute > 10)
-                              ? _customDialog
-                              : _checkLocationAndMarkAttendance,
+                              : _handleMarkAttendancePress,
                       child:
                           isLoading
                               ? null

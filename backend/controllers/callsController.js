@@ -22,12 +22,29 @@ exports.addCalls = async (req, res) => {
 
 exports.getCalls = async(req, res)=> {
     const {id} = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
     try{
-        const callsData = await Calls.findAll({
+        const { rows: callsData, count: totalCount } = await Calls.findAndCountAll({
             where :{emp_id : id},
+            limit,
+            offset,
             order: [['createdAt', 'DESC']],
         });
-        res.status(200).json({calls : callsData});
+        res.status(200).json({
+            success: true,
+            calls: callsData,
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     }catch(error){
         console.error("Error fetching Calls", error);
         res.status(500).json({message : "Database error", error});
@@ -36,12 +53,29 @@ exports.getCalls = async(req, res)=> {
 
 exports.getCallsByLeadId = async(req, res) =>{
     const{id} = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
     try{
-        const callData = await Calls.findAll({
+        const { rows: callData, count: totalCount } = await Calls.findAndCountAll({
             where :{lead_id: id},
+            limit,
+            offset,
             order: [['createdAt', 'DESC']],
         });
-        res.status(200).json({calls: callData});
+        res.status(200).json({
+            success: true,
+            calls: callData,
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     }catch(error){
         console.error("Error fetching calls", error);
         res.status(500).json({message : "Database error", error});
@@ -53,63 +87,95 @@ exports.updateCall = async (req, res) => {
   const updatedData = req.body;
 
   try {
-    const [updated] = await Calls.update(updatedData, {
-      where: { call_id: callId },
-    });
-
-    if (updated === 0) {
-      return res.status(404).json({ message: 'Call not found or no changes made' });
+    const call = await Calls.findByPk(callId);
+    
+    if (!call) {
+      return res.status(404).json({ message: "Call not found" });
     }
 
-    res.status(200).json({ message: 'Call updated successfully' });
+    await call.update(updatedData);
+    res.status(200).json({ success: true, message: "Call updated successfully", data: call });
   } catch (error) {
-    console.error('Error updating call:', error);
-    res.status(500).json({ message: 'Database error', error });
+    console.error("Error updating call:", error);
+    res.status(500).json({ message: "Database error", error });
   }
 };
 
 exports.getCallsByDates = async (req, res) => {
-    const { startDate, endDate } = req.query;
+  const { startDate, endDate } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
 
-    if (!startDate || !endDate) {
-        return res.status(400).json({ message: "startDate and endDate are required" });
-    }
+  if (!startDate || !endDate) {
+    return res.status(400).json({ message: "startDate and endDate are required" });
+  }
 
-    try {
-        const callsData = await Calls.findAll({
-            where: {
-                createdAt: {
-                    [Op.between]: [new Date(startDate), new Date(endDate)]
-                }
-            },
-            order: [['createdAt', 'DESC']],
-        });
-        res.status(200).json({ calls: callsData });
-    } catch (error) {
-        console.error("Error fetching calls by dates", error);
-        res.status(500).json({ message: "Database error", error });
-    }
+  try {
+    const { rows: callsData, count: totalCount } = await Calls.findAndCountAll({
+      where: {
+        createdAt: {
+          [Op.between]: [new Date(startDate), new Date(endDate)]
+        }
+      },
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: callsData,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching calls by dates", error);
+    res.status(500).json({ message: "Database error", error });
+  }
 }
 
 exports.getCallsByEmpIdAndDates = async (req, res) => {
     const { startDate, endDate } = req.query;
-    const { emp_id } = req.params;  
+    const { emp_id } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
 
     if (!emp_id || !startDate || !endDate) {
         return res.status(400).json({ message: "emp_id, startDate and endDate are required" });
     }
 
     try {
-        const callsData = await Calls.findAll({
+        const { rows: callsData, count: totalCount } = await Calls.findAndCountAll({
             where: {
                 emp_id: emp_id,
                 createdAt: {
                     [Op.between]: [new Date(startDate), new Date(endDate)]
                 }
             },
+            limit,
+            offset,
             order: [['createdAt', 'DESC']],
         });
-        res.status(200).json({ calls: callsData });
+        res.status(200).json({
+            success: true,
+            data: callsData,
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            }
+        });
     } catch (error) {
         console.error("Error fetching calls by emp_id and dates", error);
         res.status(500).json({ message: "Database error", error });
@@ -125,45 +191,33 @@ exports.getTotalCallsCountByEmployeeId = async (req, res) => {
 
   try {
     const totalCount = await Calls.count({
-      where: { emp_id: emp_id },  // ✅ Make sure 'emp_id' exists in Call model
+      where: { emp_id }
     });
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-
-    // ✅ Count today's calls for employee
-    const todayCount = await Calls.count({
-      where: {
-        emp_id: emp_id,
-        createdAt: {
-          [Op.between]: [startOfToday, endOfToday],
-        },
-      },
+    res.status(200).json({
+      success: true,
+      totalCount,
+      emp_id
     });
-
-
-    res.status(200).json({ total: totalCount, today: todayCount });
   } catch (error) {
-    console.error('Error getting total call count:', error);
-    res.status(500).json({ message: 'Database error', error });
+    console.error("Error getting total calls count:", error);
+    res.status(500).json({ message: "Database error", error });
   }
 };
 
 exports.filterCalls = async (req, res) => {
+  const { emp_id } = req.params;
+  const { startDate, endDate, status, loanType } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+
+  if (!emp_id) {
+    return res.status(400).json({ message: "emp_id is required" });
+  }
+
   try {
-    const { startDate, endDate, status, loanType } = req.query;
-    const { emp_id } = req.params; // 🔥 emp_id from route params
-
-    if (!emp_id) {
-      return res.status(400).json({ message: "emp_id is required" });
-    }
-
-    const whereClause = {
-      emp_id, // ✅ Filter by emp_id
-    };
+    const whereClause = { emp_id };
 
     if (startDate && endDate) {
       whereClause.createdAt = {
@@ -171,17 +225,22 @@ exports.filterCalls = async (req, res) => {
       };
     }
 
-    // 1. Fetch all calls for this emp_id and date range
-    const allCalls = await Calls.findAll({
+    // Fetch calls with pagination
+    const { rows: allCalls, count: totalCount } = await Calls.findAndCountAll({
       where: whereClause,
+      limit,
+      offset,
       order: [['createdAt', 'DESC']],
     });
 
-    // 2. Filter by lead's status and loanType
+    // Filter by lead's status and loanType
     const filteredCalls = [];
 
     for (const call of allCalls) {
-      if (!call.lead_id) continue;
+      if (!call.lead_id) {
+        filteredCalls.push(call.toJSON());
+        continue;
+      }
 
       const lead = await Leads.findOne({ where: { lead_id: call.lead_id } });
       if (!lead) continue;
@@ -198,7 +257,18 @@ exports.filterCalls = async (req, res) => {
       });
     }
 
-    res.json(filteredCalls);
+    res.status(200).json({
+      success: true,
+      data: filteredCalls,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error filtering calls:", error);
     res.status(500).json({ message: "Error filtering calls", error });

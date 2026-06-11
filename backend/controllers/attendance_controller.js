@@ -126,25 +126,53 @@ const checkattendance = async (req, res) => {
 
 const myattendance = async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming user ID is attached to the request
-    const attendanceRecords = await Attendance.findAll({
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const { rows: attendanceRecords, count: totalCount } = await Attendance.findAndCountAll({
       where: { userId },
-      attributes: ["date", "isLate", "startTime", "endTime"], // Fetch only necessary fields
+      attributes: ["date", "isLate", "startTime", "endTime"],
+      limit,
+      offset,
+      order: [['date', 'DESC']],
     });
 
     if (!attendanceRecords || attendanceRecords.length === 0) {
-      return res.status(404).json({ message: "No attendance records found" });
+      return res.status(200).json({
+        success: true,
+        data: [],
+        pagination: {
+          totalItems: 0,
+          totalPages: 0,
+          currentPage: page,
+          itemsPerPage: limit,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      });
     }
 
-    // Format response to send dates and statuses
     const formattedData = attendanceRecords.map((record) => ({
       date: moment(record.date).format("YYYY-MM-DD"),
       isLate : record.isLate,
       startTime: moment(record.startTime),
       endTime: record.endTime ? moment(record.endTime) : null,
     }));
-    console.log(formattedData, "=========?");
-    res.status(200).json({ success: true, data: formattedData });
+
+    res.status(200).json({
+      success: true,
+      data: formattedData,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error fetching attendance records:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
@@ -153,16 +181,22 @@ const myattendance = async (req, res) => {
 
 const getcompleteuserdetailsattendance = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
     const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(402).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const attendances = await Attendance.findAll({
+    const { rows: attendances, count: totalCount } = await Attendance.findAndCountAll({
       where: { userId: user.id },
+      limit,
+      offset,
+      order: [['date', 'DESC']],
     });
 
-    // Transform the attendance data and convert to IST
     const transformedAttendances = attendances.map((attendance) => {
       const plainAttendance = attendance.get({ plain: true });
       return {
@@ -179,7 +213,7 @@ const getcompleteuserdetailsattendance = async (req, res) => {
     });
 
     const categorizedAttendance = {
-      total: attendances.length,
+      total: totalCount,
       fullDay: transformedAttendances.filter(
         (attendance) => attendance.status === "Full Day"
       ).length,
@@ -189,9 +223,18 @@ const getcompleteuserdetailsattendance = async (req, res) => {
     };
 
     res.json({
+      success: true,
       user,
       attendances: transformedAttendances,
       categorizedAttendance,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -244,71 +287,84 @@ const autoCloseAttendances = async () => {
       const isFullDay = duration >= 8.5 && isMarkedEarly;
 
       // Set attendance status
-      attendance.status = isFullDay ? "Full Day" : "Half Day";
+      if (isFullDay) {
+        attendance.status = "Full Day";
+      } else {
+        attendance.status = "Half Day";
+      }
 
-      // Save the updated attendance
       await attendance.save();
     }
 
     console.log("Auto-close attendance job completed.");
   } catch (error) {
-    console.error("Error in auto-close attendance job:", error);
+    console.error("Error auto-closing attendances:", error);
   }
 };
 
 const getMonthlyAttendance = async (req, res) => {
   try {
-    const { month } = req.params;      // Example: "2025-06"
-    const { startDate, endDate, userId } = req.query;  // For custom date range
+    const { startDate, endDate, userId, month } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 31;
+    const offset = (page - 1) * limit;
 
     let start, end;
+    const dateWhere = {};
 
     if (startDate && endDate) {
-      // ✅ Custom date range mode
       start = moment(startDate, "YYYY-MM-DD", true);
       end = moment(endDate, "YYYY-MM-DD", true);
 
       if (!start.isValid() || !end.isValid()) {
         return res.status(400).json({ message: "Invalid startDate or endDate." });
       }
+
+      dateWhere[Op.between] = [start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD")];
     } else if (month) {
-      // ✅ Monthly mode (old working)
       if (!moment(month, "YYYY-MM", true).isValid()) {
         return res.status(400).json({ message: "Invalid month parameter." });
       }
 
       start = moment(month, "YYYY-MM").startOf("month");
       end = moment(month, "YYYY-MM").endOf("month");
+      dateWhere[Op.between] = [start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD")];
     } else {
       return res.status(400).json({ message: "Either month param or startDate & endDate required." });
     }
 
-    var attendanceRecords = await Attendance.findAll({
-      where: {
-        date: {
-          [Op.between]: [start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD")],
-        },
-      },
-      order: [["date", "ASC"]],
+    const whereClause = {
+      date: dateWhere,
+    };
+
+    if (userId) {
+      whereClause.userId = userId;
+    }
+
+    const { rows: attendanceRecords, count: totalCount } = await Attendance.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset,
+      order: [["date", "DESC"]],
     });
 
-    if(userId){
-      attendanceRecords = await Attendance.findAll({
-        where:{
-          date : {
-            [Op.between]: [start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD")],
-          },
-          userId:userId
-        },
-        order: [["date", "ASC"]],
-      });
-    }
-    return res.status(200).json({ attendance: attendanceRecords });
+    return res.status(200).json({
+      success: true,
+      data: attendanceRecords,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error fetching attendance:", error);
     return res.status(500).json({ message: "Server error", error });
   }
-};
+}
 
 
 

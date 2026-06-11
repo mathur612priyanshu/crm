@@ -17,6 +17,7 @@ import {
   Search
 } from 'lucide-react';
 import axios from "axios";
+import { useStatuses } from '../../contexts/StatusContext';
 import {
   BarChart,
   Bar,
@@ -35,6 +36,7 @@ import {
 import API_URL from '../../config';
 
 const PerformanceScreen = () => {
+  const { statuses } = useStatuses();
   const [employee, setEmployee] = useState(null);
   const [allEmployees, setAllEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,19 +63,14 @@ const PerformanceScreen = () => {
   const fullAttendance = attendance.filter(a => a.isLate === false).length;
   const lateAttendance = attendance.filter(a => a.isLate === true).length;
 
-  // Lead status counts
-  const freshLeads = leads.filter(lead => lead.status === 'Fresh Lead').length;
-  const interestedLeads = leads.filter(lead => lead.status === 'Interested');
-  const callBackLeads = leads.filter(lead => lead.status === 'Call Back');
-  const noRequirementLeads = leads.filter(lead => lead.status === 'No Requirement');
-  const followUps = leads.filter(lead => lead.status === 'Follow up');
-  const documentRejects = leads.filter(lead => lead.status === 'Document Rejected');
-  const documentsPending = leads.filter(lead => lead.status === 'Document Pending');
-  const notPick = leads.filter(lead=> lead.status === 'Not Pick');
-  const notConnected = leads.filter(lead=> lead.status === 'Not Connected');
-  const fileLogins = leads.filter(lead => lead.status === 'File Login');
-  const loanSections = leads.filter(lead => lead.status === 'Loan Section');
-  const loanDisbursements = leads.filter(lead => lead.status === 'Loan Disbursement');
+  // Lead status counts - dynamic based on backend statuses
+  const leadStatusCounts = {};
+  statuses.forEach(status => {
+    leadStatusCounts[status.name] = leads.filter(lead => lead.status === status.name).length;
+  });
+
+  const activeStatusName = statuses.length > 1 ? statuses[1].name : (statuses.length > 0 ? statuses[0].name : "Interested");
+  const interestedCount = leadStatusCounts[activeStatusName] || 0;
 
   // Loan type counts
   const homeLoanLeads = leads.filter(lead => lead.loan_type === 'Home Loan');
@@ -100,20 +97,18 @@ const PerformanceScreen = () => {
     { name: 'Late', value: lateAttendance, color: '#f59e0b' },
   ];
 
-  const leadStatusData = [
-    { name: 'Fresh Leads', value: freshLeads, color: '#f59e0b' },
-    { name: "Interested", value: interestedLeads.length, color: "#3b82f6" },
-    { name: "Call Back", value: callBackLeads.length, color: "#60a5fa" },
-    { name: "Follow up", value: followUps.length, color: "#a5b4fc" },
-    { name: "No Requirement", value: noRequirementLeads.length, color: "#f87171" },
-    { name: "Document Reject", value: documentRejects.length, color: "#10b981" },
-    { name: "Document Pending", value: documentsPending.length, color: "#f59e0b" },
-    { name: "Not Pick", value: notPick.length, color: "#3b82f6" },
-    { name: "Not Connected", value: notConnected.length, color: "#60a5fa" },
-    { name: "File Login", value: fileLogins.length, color: "#6366f1" },
-    { name: "Loan Section", value: loanSections.length, color: "#ec4899" },
-    { name: "Loan Disbursement", value: loanDisbursements.length, color: "#22d3ee" }
-  ];
+  const leadStatusData = statuses.map((status, idx) => {
+    const colors = [
+      "#f59e0b", "#3b82f6", "#60a5fa", "#a5b4fc", "#f87171",
+      "#10b981", "#f59e0b", "#3b82f6", "#60a5fa", "#6366f1",
+      "#ec4899", "#22d3ee"
+    ];
+    return {
+      name: status.name,
+      value: leadStatusCounts[status.name] || 0,
+      color: colors[idx % colors.length]
+    };
+  });
 
   const loanTypeData = [
     { name: 'Home Loans', value: homeLoanLeads.length, color: '#3b82f6' },
@@ -422,7 +417,7 @@ const renderBarChart = (data, title, dataKey = "value") => {
                   <div>
                     <p className="text-sm font-medium text-indigo-600">Total Leads</p>
                     <p className="text-2xl font-bold text-indigo-800">{leads.length}</p>
-                    <p className="text-xs text-indigo-500 mt-1">{interestedLeads.length} interested</p>
+                    <p className="text-xs text-indigo-500 mt-1">{interestedCount} {activeStatusName.toLowerCase()}</p>
                   </div>
                   <div className="bg-indigo-100 p-3 rounded-full">
                     <Users className="w-6 h-6 text-indigo-600" />

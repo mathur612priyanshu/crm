@@ -20,19 +20,35 @@ exports.addHistory = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
     const { id } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
 
     try {
-        const historyData = await History.findAll({
+        const { rows: historyData, count: totalCount } = await History.findAndCountAll({
             where: { lead_id: id },
             include: [
                 { model: LeadStatus, as: "statusDetails", attributes: ["name"] },
                 { model: LeadStatus, as: "previousStatusDetails", attributes: ["name"] },
                 { model: Employee, as: "changedBy", attributes: ["emp_id", "ename"] },
             ],
+            limit,
+            offset,
             order: [['createdAt', 'DESC']],
         });
 
-        res.status(200).json({ history: historyData });
+        res.status(200).json({
+            success: true,
+            history: historyData,
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     } catch (error) {
         console.error("Error fetching history:", error);
         res.status(500).json({ message: "Database error", error });

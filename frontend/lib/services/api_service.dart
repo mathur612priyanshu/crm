@@ -1,4 +1,4 @@
-import 'dart:convert';
+  import 'dart:convert';
 
 import 'package:capital_care/constants/server_url.dart';
 import 'package:capital_care/models/calls_model.dart';
@@ -7,6 +7,7 @@ import 'package:capital_care/models/leads_model.dart';
 import 'package:capital_care/models/employee_model.dart';
 import 'package:capital_care/models/task_model.dart';
 import 'package:capital_care/models/template_model.dart';
+import 'package:capital_care/models/status_model.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -17,6 +18,20 @@ class ApiService {
   static String baseUrl = ServerUrl;
 
   static final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+
+  static Future<Map<String, dynamic>?> fetchSettings() async {
+    try {
+      final url = Uri.parse("$baseUrl/settings");
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return decoded['data'];
+      }
+    } catch (e) {
+      print("Error fetching settings: $e");
+    }
+    return null;
+  }
 
   static Future<Employee> getUserById(String userId) async {
     final url = Uri.parse("$baseUrl/employees/$userId");
@@ -82,7 +97,7 @@ class ApiService {
     }
   }
 
-  static Future<List<String>> fetchLeadStatuses({String? team}) async {
+  static Future<List<LeadStatus>> fetchLeadStatuses({String? team}) async {
     final queryParameters = <String, String>{};
     if (team != null && team.isNotEmpty) {
       queryParameters["team"] = team;
@@ -97,7 +112,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final statuses = data["statuses"] as List;
-      return statuses.map((status) => status["name"].toString()).toList();
+      return statuses.map((status) => LeadStatus.fromJson(status)).toList();
     }
 
     throw Exception("Failed to fetch lead statuses: ${response.body}");
@@ -120,7 +135,8 @@ class ApiService {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      List jsonData = jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
+      final List jsonData = decoded['data'] ?? decoded;
       return jsonData.map((e) => Leads.fromJson(e)).toList();
     } else {
       throw Exception("Failed to load leads");

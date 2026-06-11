@@ -13,6 +13,7 @@ const attendanceRoutes = require("./routes/attendance_routes");
 const taskRoutes = require("./routes/taskRoutes");
 const templateRoutes = require('./routes/template_route');
 const leadStatusRoutes = require("./routes/leadStatusRoutes");
+const settingRoutes = require("./routes/settingRoutes");
 // AWS bucket is disabled for now because the old AWS account is no longer active.
 // const { createBucketIfNotExists } = require('./services/bucket_services');
 
@@ -34,6 +35,7 @@ app.use("/api", attendanceRoutes);
 app.use("/api", taskRoutes);
 app.use("/api", templateRoutes);
 app.use("/api", leadStatusRoutes);
+app.use("/api", settingRoutes);
 
 app.get("/", (req, res) => {
   res.json("testing hello from backned");

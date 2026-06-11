@@ -11,6 +11,7 @@ import Sidebar from "./components/sidebar";
 import UserList from "./screens/users/Screens/userlist";
 import LeadsList from "./screens/leads/Screens/leadslist";
 import LeadDetailScreen from "./screens/leads/Screens/leadsdetailsscreen";
+import LeadEditScreen from "./screens/leads/Screens/leadEdit";
 import AttendanceScreen from "./screens/attendance/attendance_screen";
 import UserDetailScreen from "./screens/users/Screens/userdetailsscreen";
 import TaskScreen from "./screens/tasks/Screens/taskScreen";
@@ -21,6 +22,7 @@ import PerformanceScreen from "./screens/performance/performanceScreen";
 import LeadsReport from "./screens/leadReport/leadReportScreen";
 import LeadStatusesScreen from "./screens/leadStatuses/leadStatusesScreen";
 import OperationsScreen from "./screens/operations/operationsScreen";
+import SettingsScreen from "./screens/settings/settings";
 
 const Layout = () => {
   const location = useLocation();
@@ -68,6 +70,14 @@ const Layout = () => {
             element={
               <ProtectedRoute allowedRoles={["manager", "operations"]}>
                 <LeadDetailScreen />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lead-edit/:id"
+            element={
+              <ProtectedRoute allowedRoles={["manager", "operations"]}>
+                <LeadEditScreen />
               </ProtectedRoute>
             }
           />
@@ -132,6 +142,15 @@ const Layout = () => {
             element={
               <ProtectedRoute allowedRoles={["manager"]}>
                 <LeadsReport />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute allowedRoles={["manager"]}>
+                <SettingsScreen />
               </ProtectedRoute>
             }
           />

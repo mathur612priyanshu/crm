@@ -25,10 +25,12 @@ const AddLead = ({ handleCloseaddcallformModal, onCreated }) => {
     setError("");
 
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/submit-lead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           name: formData.name,
@@ -60,8 +62,12 @@ const AddLead = ({ handleCloseaddcallformModal, onCreated }) => {
 
     setIsLoading(true);
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/addLeadsFromExcel`, {
         method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: formDataToSend,
       });
 

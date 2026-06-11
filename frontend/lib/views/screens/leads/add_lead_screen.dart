@@ -273,7 +273,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
 
       if (statuses.isNotEmpty && mounted) {
         setState(() {
-          statusOptions = statuses;
+          statusOptions = statuses.map((e) => e.name).toList();
         });
       }
     } catch (error) {
@@ -366,66 +366,63 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              if (widget.title == "Add Lead")
-                CustomDropdown(
-                  hint: widget.status == null ? "Select Status" : widget.status,
-                  options: statusOptions,
-                  onChange: (value) {
-                    setState(() {
-                      statusController.text = value;
-                    });
-                  },
-                ),
-              if (widget.title == "Add Lead") const SizedBox(height: 12),
+              CustomDropdown(
+                hint: widget.status == null ? "Select Status" : widget.status,
+                options: statusOptions,
+                onChange: (value) {
+                  setState(() {
+                    statusController.text = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
 
-              if (widget.title == "Add Lead")
-                if (statusController.text != "No Requirement")
-                  GestureDetector(
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
+              if (statusController.text != "No Requirement")
+                GestureDetector(
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2050),
+                    );
+
+                    if (pickedDate != null) {
+                      TimeOfDay? pickedTime = await showTimePicker(
                         context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2050),
+                        initialTime: TimeOfDay.now(),
                       );
 
-                      if (pickedDate != null) {
-                        TimeOfDay? pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
+                      if (pickedTime != null) {
+                        // Combine date and time into one DateTime
+                        DateTime finalDateTime = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
                         );
 
-                        if (pickedTime != null) {
-                          // Combine date and time into one DateTime
-                          DateTime finalDateTime = DateTime(
-                            pickedDate.year,
-                            pickedDate.month,
-                            pickedDate.day,
-                            pickedTime.hour,
-                            pickedTime.minute,
-                          );
-
-                          // Format as desired, e.g., YYYY-MM-DD HH:MM
-                          nextMeetingTimeController.text =
-                              finalDateTime.toString();
-                          // OR use intl package for prettier format:
-                          // nextMeetingTimeController.text = DateFormat('yyyy-MM-dd HH:mm').format(finalDateTime);
-                        }
+                        // Format as desired, e.g., YYYY-MM-DD HH:MM
+                        nextMeetingTimeController.text =
+                            finalDateTime.toString();
+                        // OR use intl package for prettier format:
+                        // nextMeetingTimeController.text = DateFormat('yyyy-MM-dd HH:mm').format(finalDateTime);
                       }
-                    },
-                    child: AbsorbPointer(
-                      child: TextFormField(
-                        controller: nextMeetingTimeController,
-                        decoration: InputDecoration(
-                          hintText: 'Select Next Meeting Date',
-                          border: OutlineInputBorder(),
-                        ),
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      controller: nextMeetingTimeController,
+                      decoration: InputDecoration(
+                        hintText: 'Select Next Meeting Date',
+                        border: OutlineInputBorder(),
                       ),
                     ),
                   ),
-              if (widget.title == "Add Lead")
-                if (statusController.text != "No Requirement")
-                  SizedBox(height: 12),
+                ),
+              if (statusController.text != "No Requirement")
+                SizedBox(height: 12),
 
               const SizedBox(height: 12),
               CustomTextField(hint: "Remark", controller: remarkController),

@@ -1,26 +1,13 @@
 import 'package:capital_care/models/leads_model.dart';
+import 'package:capital_care/controllers/providers/status_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DynamicBarChart extends StatelessWidget {
   final List<Leads> leads;
 
   DynamicBarChart({Key? key, required this.leads}) : super(key: key);
-
-  final List<String> statusList = [
-    "Interested",
-    "Call Back",
-    "No Requirement",
-    "Follow up",
-    "Document Rejected",
-    "Document Pending",
-    "Not Pick",
-    "Not Connected",
-    "File Login",
-    "Loan Section",
-    "Loan Disbursement",
-    "Fresh Lead",
-  ];
 
   final List<Color> boxColorList = [
     Colors.blue,
@@ -39,6 +26,13 @@ class DynamicBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusProvider = Provider.of<StatusProvider>(context);
+    final statusList = statusProvider.statusNames;
+    
+    if (statusList.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     // Step 1: Count how many leads have each status
     Map<String, int> statusCounts = {for (var s in statusList) s: 0};
     for (var lead in leads) {

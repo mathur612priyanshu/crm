@@ -3,6 +3,7 @@ import { Calendar, User, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import API_URL from '../../config';
 import axios from "axios";
 import moment from "moment";
+import { useStatuses } from '../../contexts/StatusContext';
 import {
   BarChart,
   Bar,
@@ -20,6 +21,7 @@ import {
 } from "recharts";
 
 const LeadsReport = () => {
+  const { statuses, getStatusNamesWithAll, loading: statusesLoading } = useStatuses();
   const [selectedEmpId, setSelectedEmpId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -33,21 +35,7 @@ const LeadsReport = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = 10;
 
-  const statusList = [
-    "All",
-    "Fresh Lead",
-    "Interested",
-    "Call Back",
-    "No Requirement",
-    "Follow up",
-    "Document Rejected",
-    "Document Pending",
-    "Not Pick",
-    "Not Connected",
-    "File Login",
-    "Loan Section",
-    "Loan Disbursement"
-  ];
+  const statusList = getStatusNamesWithAll();
 
   // Set default date range (last 30 days)
   useEffect(() => {
@@ -124,34 +112,45 @@ const LeadsReport = () => {
   const currentLeads = filteredLeads.slice(indexOfFirstLead, indexOfLastLead);
   const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
 
-  // Lead status counts
-  const freshLeads = leadsData.filter(lead => lead.status === 'Fresh Lead').length;
-  const interestedLeads = leadsData.filter(lead => lead.status === 'Interested');
-  const callBackLeads = leadsData.filter(lead => lead.status === 'Call Back');
-  const noRequirementLeads = leadsData.filter(lead => lead.status === 'No Requirement');
-  const followUps = leadsData.filter(lead => lead.status === 'Follow up');
-  const documentRejects = leadsData.filter(lead => lead.status === 'Document Rejected');
-  const documentsPending = leadsData.filter(lead => lead.status === 'Document Pending');
-  const notPick = leadsData.filter(lead=> lead.status === 'Not Pick');
-  const notConnected = leadsData.filter(lead=> lead.status === 'Not Connected');
-  const fileLogins = leadsData.filter(lead => lead.status === 'File Login');
-  const loanSections = leadsData.filter(lead => lead.status === 'Loan Section');
-  const loanDisbursements = leadsData.filter(lead => lead.status === 'Loan Disbursement');
+  // Lead status counts - dynamic based on backend statuses
+  const leadStatusCounts = {};
+  statuses.forEach(status => {
+    leadStatusCounts[status.name] = leadsData.filter(lead => lead.status === status.name).length;
+  });
 
-  const leadStatusData = [
-    { name: 'Fresh Leads', value: freshLeads, color: '#f59e0b' },
-    { name: "Interested", value: interestedLeads.length, color: "#3b82f6" },
-    { name: "Call Back", value: callBackLeads.length, color: "#60a5fa" },
-    { name: "Follow up", value: followUps.length, color: "#a5b4fc" },
-    { name: "No Requirement", value: noRequirementLeads.length, color: "#f87171" },
-    { name: "Document Reject", value: documentRejects.length, color: "#10b981" },
-    { name: "Document Pending", value: documentsPending.length, color: "#f59e0b" },
-    { name: "Not Pick", value: notPick.length, color: "#3b82f6" },
-    { name: "Not Connected", value: notConnected.length, color: "#60a5fa" },
-    { name: "File Login", value: fileLogins.length, color: "#6366f1" },
-    { name: "Loan Section", value: loanSections.length, color: "#ec4899" },
-    { name: "Loan Disbursement", value: loanDisbursements.length, color: "#22d3ee" }
-  ];
+  const leadStatusData = statuses.map((status, index) => ({
+    name: status.name,
+    value: leadStatusCounts[status.name] || 0,
+    color: getStatusColor(index),
+  })).filter(item => item.value > 0);
+
+  function getStatusColor(index) {
+    const colors = [
+      '#f59e0b', '#3b82f6', '#60a5fa', '#a5b4fc', '#f87171',
+      '#10b981', '#f59e0b', '#3b82f6', '#60a5fa', '#6366f1',
+      '#ec4899', '#22d3ee', '#8b5cf6', '#f97316', '#14b8a6'
+    ];
+    return colors[index % colors.length];
+  }
+
+  function getStatusBadgeColor(statusName) {
+    const statusIndex = statuses.findIndex(s => s.name === statusName);
+    if (statusIndex === -1) return 'bg-gray-100 text-gray-800';
+    
+    const colorMap = [
+      'bg-blue-100 text-blue-800',
+      'bg-green-100 text-green-800',
+      'bg-yellow-100 text-yellow-800',
+      'bg-red-100 text-red-800',
+      'bg-purple-100 text-purple-800',
+      'bg-pink-100 text-pink-800',
+      'bg-indigo-100 text-indigo-800',
+      'bg-orange-100 text-orange-800',
+      'bg-teal-100 text-teal-800',
+      'bg-cyan-100 text-cyan-800'
+    ];
+    return colorMap[statusIndex % colorMap.length];
+  }
 
   // Loan type counts
   const homeLoanLeads = leadsData.filter(lead => lead.loan_type === 'Home Loan');
@@ -387,50 +386,30 @@ const LeadsReport = () => {
             </div>
           </div>
 
-          {/*Fresh Leads*/}
-          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600">Fresh Leads</p>
-                <p className="text-2xl font-bold text-green-800">
-                  {leadsData.filter(lead => lead.status === 'Fresh Lead').length}
-                </p>
+          {/* Dynamic status cards - show top 3 statuses by count */}
+          {leadStatusData.slice(0, 3).map((status, index) => {
+            const bgColorClasses = [
+              'bg-green-50 border-green-200 text-green-600 bg-green-100 text-green-800',
+              'bg-purple-50 border-purple-200 text-purple-600 bg-purple-100 text-purple-800',
+              'bg-yellow-50 border-yellow-200 text-yellow-600 bg-yellow-100 text-yellow-800'
+            ];
+            const [bgClass, borderClass, textClass, iconBgClass, iconTextClass] = bgColorClasses[index].split(' ');
+            return (
+              <div key={status.name} className={`${bgClass} rounded-lg p-4 border ${borderClass}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium ${textClass}`}>{status.name}</p>
+                    <p className={`text-2xl font-bold ${iconTextClass}`}>
+                      {status.value}
+                    </p>
+                  </div>
+                  <div className={`${iconBgClass} p-2 rounded-full`}>
+                    <User className={`w-5 h-5 ${textClass}`} />
+                  </div>
+                </div>
               </div>
-              <div className="bg-green-100 p-2 rounded-full">
-                <User className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          {/*Interested Leads*/}
-          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600">Interested</p>
-                <p className="text-2xl font-bold text-purple-800">
-                  {leadsData.filter(lead => lead.status === 'Interested').length}
-                </p>
-              </div>
-              <div className="bg-purple-100 p-2 rounded-full">
-                <User className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          {/*Follow ups Leads*/}
-          <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-yellow-600">Follow Ups</p>
-                <p className="text-2xl font-bold text-yellow-800">
-                  {leadsData.filter(lead => lead.status === 'Follow up').length}
-                </p>
-              </div>
-              <div className="bg-yellow-100 p-2 rounded-full">
-                <User className="w-5 h-5 text-yellow-600" />
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         {/* Leads Over Time */}
@@ -529,10 +508,7 @@ const LeadsReport = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${lead.status === 'Fresh Lead' ? 'bg-blue-100 text-blue-800' :
-                            lead.status === 'Follow up' ? 'bg-yellow-100 text-yellow-800' :
-                            lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'}`}>
+                          ${getStatusBadgeColor(lead.status)}`}>
                           {lead.status}
                         </span>
                       </td>

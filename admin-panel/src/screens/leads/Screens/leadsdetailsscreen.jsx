@@ -7,17 +7,15 @@ import * as XLSX from "xlsx";
 const LeadDetailScreen = () => {
   const { id } = useParams();
 
-  const [user, setUser] = useState(null);
   const [lead, setLead] = useState(null);
+
   const [calls, setCalls] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [personNames, setPersonNames] = useState({});
+  const [personNames] = useState({});
   const [histories, setHistories] = useState([]);
   const [activeTab, setActiveTab] = useState("calls");
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const itemsPerPage = 50;
+
+
 
 const downloadexcel = () => {
   // Prepare calls data

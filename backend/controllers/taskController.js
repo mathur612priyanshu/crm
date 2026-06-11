@@ -19,7 +19,10 @@ exports.addTask = async (req, res)=>{
 
 exports.getTasks = async (req, res) => {
     const { id } = req.params;
-    const { startDate, endDate } = req.query; // ⭐️ date filter query se milega
+    const { startDate, endDate } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
 
     try {
         const whereClause = { emp_id: id };
@@ -30,12 +33,25 @@ exports.getTasks = async (req, res) => {
             };
         }
 
-        const tasks = await Tasks.findAll({
+        const { rows: tasks, count: totalCount } = await Tasks.findAndCountAll({
             where: whereClause,
+            limit,
+            offset,
             order: [['createdAt', 'DESC']],
         });
 
-        res.status(200).json({ tasks: tasks });
+        res.status(200).json({
+            success: true,
+            tasks: tasks,
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     } catch (error) {
         console.error("Error fetching tasks", error);
         res.status(500).json({ message: "Database error", error });
@@ -43,11 +59,29 @@ exports.getTasks = async (req, res) => {
 };
 exports.getTasksByLeadId = async(req, res)=>{
     const {id} = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
     try{
-        const task = await Tasks.findAll({
-            where : {lead_id : id}
+        const { rows: tasks, count: totalCount } = await Tasks.findAndCountAll({
+            where : {lead_id : id},
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']],
         });
-        res.status(200).json({tasks: task});
+        res.status(200).json({
+            success: true,
+            tasks: tasks,
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     }catch(error){
         console.error("Error fetching tasks", error);
         res.status(500).json({message: "Database error", error});

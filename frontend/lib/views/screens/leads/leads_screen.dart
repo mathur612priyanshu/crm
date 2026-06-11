@@ -1,5 +1,6 @@
 import 'package:capital_care/controllers/providers/lead_provider.dart';
 import 'package:capital_care/controllers/providers/userprovider.dart';
+import 'package:capital_care/controllers/providers/status_provider.dart';
 import 'package:capital_care/theme/appcolors.dart';
 import 'package:capital_care/views/screens/leads/add_lead_screen.dart';
 import 'package:capital_care/views/screens/leads/lead_details_screen.dart';
@@ -44,20 +45,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
     "Other",
   ];
 
-  final List<String> statusOptions = [
-    "All",
-    "Interested",
-    "Call Back",
-    "No Requirement",
-    "Follow up",
-    "Document Rejected",
-    "Document Pending",
-    "Not Pick",
-    "Not Connected",
-    "File Login",
-    "Loan Section",
-    "Loan Disbursement",
-  ];
+  // statusOptions removed, fetching dynamically via StatusProvider
 
   @override
   void initState() {
@@ -67,15 +55,23 @@ class _LeadsScreenState extends State<LeadsScreen> {
         context,
         listen: false,
       ).fetchLeads(start: startDate, end: endDate);
+      
+      Provider.of<StatusProvider>(
+        context,
+        listen: false,
+      ).fetchStatuses();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final leadProvider = Provider.of<LeadProvider>(context, listen: true);
+    final statusProvider = Provider.of<StatusProvider>(context);
     final leads = leadProvider.leads;
     final isLoading = leadProvider.isLoading;
     final user = Provider.of<UserProvider>(context).user;
+
+    final statusOptions = statusProvider.statusNamesWithAll;
 
     final filteredLeads =
       leads.where((lead) {

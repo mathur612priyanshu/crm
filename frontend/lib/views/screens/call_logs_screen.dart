@@ -1,5 +1,6 @@
 import 'package:capital_care/controllers/providers/calls_provider.dart';
 import 'package:capital_care/controllers/providers/lead_provider.dart';
+import 'package:capital_care/controllers/providers/status_provider.dart';
 import 'package:capital_care/models/calls_model.dart';
 import 'package:capital_care/services/api_service.dart';
 import 'package:capital_care/theme/appcolors.dart';
@@ -47,20 +48,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
     "Insurance",
     "Other",
   ];
-  final List<String> statusOptions = [
-    "All",
-    "Interested",
-    "Call Back",
-    "No Requirement",
-    "Follow up",
-    "Document Rejected",
-    "Document Pending",
-    "Not Pick",
-    "Not Connected",
-    "File Login",
-    "Loan Section",
-    "Loan Disbursement",
-  ];
+  // statusOptions removed, fetching dynamically via StatusProvider
 
   @override
   void dispose() {
@@ -128,7 +116,9 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
   @override
   Widget build(BuildContext context) {
     final callProvider = Provider.of<CallsProvider>(context, listen: true);
+    final statusProvider = Provider.of<StatusProvider>(context);
     callLogs = callProvider.filteredCalls;
+    final statusOptions = statusProvider.statusNamesWithAll;
     final filteredCallLogs =
         callLogs.where((call) {
           final matchesSearch =

@@ -41,7 +41,7 @@ const UserDetailScreen = () => {
         
         // Fetch leads associated with this employee
         const leadsResponse = await axios.get(`${API_URL}/leads/${emp_id}`);
-        setLeads(leadsResponse.data);
+        setLeads(leadsResponse.data?.data || (Array.isArray(leadsResponse.data) ? leadsResponse.data : []));
         
         // Fetch calls associated with this employee
         const callsResponse = await axios.get(`${API_URL}/calls/${emp_id}`);
@@ -386,9 +386,9 @@ const UserDetailScreen = () => {
                           className="cursor-pointer hover:text-blue-600"
                           // onClick={() => openDescriptionModal(task.description)}
                         >
-                          {task.description.length > 30
+                          {task.description && task.description.length > 30
                             ? `${task.description.slice(0, 30)}...`
-                            : task.description}
+                            : task.description || ""}
                         </span>
                       </td>
                     </tr>
@@ -404,7 +404,7 @@ const UserDetailScreen = () => {
             {tasks.length > tasksPerPage && (
               <div className="flex justify-between items-center mt-4">
                 <button
-                  onClick={() => setCallsPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => setTasksPage(prev => Math.max(prev - 1, 1))}
                   disabled={tasksPage === 1}
                   className={`px-3 py-1 rounded ${tasksPage === 1 ? 'bg-gray-200 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                 >

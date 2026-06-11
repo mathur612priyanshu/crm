@@ -75,6 +75,10 @@ const resolveLeadStatus = async ({ status, status_id }) => {
   }
 
   if (status) {
+    if (!isNaN(status)) {
+      const parsedId = parseInt(status, 10);
+      return LeadStatus.findOne({ where: { status_id: parsedId, is_active: true } });
+    }
     return LeadStatus.findOne({ where: { name: status, is_active: true } });
   }
 
@@ -100,13 +104,18 @@ const getActor = async (req) => {
 };
 
 const canActorSetStatus = (actorRole, leadStatus) => {
+  // Admin is treated as a MANAGER in this system, so allow full editing
   if (!actorRole || actorRole === EMPLOYEE_ROLES.MANAGER) return true;
+
+  // Calling/Operations can only move status within their assigned team
   if (actorRole === EMPLOYEE_ROLES.OPERATIONS) {
     return leadStatus.team === "operations" || leadStatus.team === "both";
   }
   if (actorRole === EMPLOYEE_ROLES.CALLING) {
     return leadStatus.team === "calling" || leadStatus.team === "both";
   }
+
+  // Default deny
   return false;
 };
 
@@ -391,8 +400,45 @@ exports.getLeadsForAdminPanel = async (req, res) => {
 
 exports.getLeads = async (req, res)=>{
     try{
-         const lead = await Lead.findAll({ include: [leadStatusInclude] });
-          res.status(200).json(serializeLeads(lead));
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
+
+        const fromDate = req.query.fromDate;
+        const toDate = req.query.toDate;
+        
+        let whereCondition = {};
+        if (fromDate && toDate) {
+            const startOfDay = new Date(fromDate);
+            startOfDay.setUTCHours(0, 0, 0, 0);
+            const endOfDay = new Date(toDate);
+            endOfDay.setUTCHours(23, 59, 59, 999);
+            
+            whereCondition.createdAt = {
+                [Op.between]: [startOfDay, endOfDay],
+            };
+        }
+
+        const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
+            where: whereCondition,
+            include: [leadStatusInclude],
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']],
+        });
+
+        res.status(200).json({
+            success: true,
+            data: serializeLeads(leads),
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     }catch(error){
         console.error('Error fetching leads:', error);
         res.status(500).json({ message: 'Database error', error });
@@ -402,35 +448,65 @@ exports.getLeads = async (req, res)=>{
 exports.getLeadsById = async (req, res)=>{
     const {emp_id} = req.params;
     try{
-         const employee = await Employee.findByPk(emp_id);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
 
-         if (!employee) {
+        const employee = await Employee.findByPk(emp_id);
+
+        if (!employee) {
             return res.status(404).json({ message: "Employee not found" });
-         }
+        }
 
-         let where = { person_id: emp_id };
+        let where = { person_id: emp_id };
 
-         if (employee.role === EMPLOYEE_ROLES.OPERATIONS) {
+        const fromDate = req.query.fromDate;
+        const toDate = req.query.toDate;
+        
+        if (fromDate && toDate) {
+            const startOfDay = new Date(fromDate);
+            startOfDay.setUTCHours(0, 0, 0, 0);
+            const endOfDay = new Date(toDate);
+            endOfDay.setUTCHours(23, 59, 59, 999);
+            
+            where.createdAt = {
+                [Op.between]: [startOfDay, endOfDay],
+            };
+        }
+
+        if (employee.role === EMPLOYEE_ROLES.OPERATIONS) {
             const operationStatuses = await LeadStatus.findAll({
-              where: {
-                is_active: true,
-                team: { [Op.in]: ["operations", "both"] },
-              },
+                where: {
+                    is_active: true,
+                    team: { [Op.in]: ["operations", "both"] },
+                },
             });
 
-            where = {
-              status_id: {
+            where.status_id = {
                 [Op.in]: operationStatuses.map((status) => status.status_id),
-              },
             };
-         }
+        }
 
-         const lead = await Lead.findAll({
+        const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
             where,
             include: [leadStatusInclude],
+            limit,
+            offset,
             order: [['createdAt', 'DESC']],
-         });
-          res.status(200).json(serializeLeads(lead));
+        });
+
+        res.status(200).json({
+            success: true,
+            data: serializeLeads(leads),
+            pagination: {
+                totalItems: totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < Math.ceil(totalCount / limit),
+                hasPreviousPage: page > 1,
+            },
+        });
     }catch(error){
         console.error('Error fetching leads:', error);
         res.status(500).json({ message: 'Database error', error : error });
@@ -440,22 +516,22 @@ exports.getLeadsById = async (req, res)=>{
 exports.deleteLead = async (req, res)=> {
     const{id} = req.params;
     try{
-        const deleted = Lead.destroy({where:{lead_id : id}});
+        const deleted = await Lead.destroy({where:{lead_id : id}});
         if (deleted) {
-      res.status(200).json({ message: 'Lead deleted successfully' });
-    } else {
-      res.status(404).json({ message: 'Lead not found' });
-    }
+            res.status(200).json({ message: 'Lead deleted successfully' });
+        } else {
+            res.status(404).json({ message: 'Lead not found' });
+        }
     }catch(error){
-        console.error('Error deleting lead:', err);
-    res.status(500).json({ message: 'Server error' });
+        console.error('Error deleting lead:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
 exports.getLeadDetails = async (req, res) => {
     const { id } = req.params;
     try {
-        const lead = await Lead.findByPk(id, { include: [leadStatusInclude] }); // find by primary key
+        const lead = await Lead.findByPk(id, { include: [leadStatusInclude] });
 
         if (!lead) {
             return res.status(404).json({ message: "Lead not found" });
@@ -469,34 +545,80 @@ exports.getLeadDetails = async (req, res) => {
 };
 
 exports.searchByName = async (req, res)=>{
-  const search = req.query.search || "";
+  try {
+    const search = req.query.search || "";
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
 
-  const leads = await Lead.find({
-    name: { $regex: search, $options: "i" }, 
-  });
+    const whereClause = search ? {
+      [Op.or]: [
+        { name: { [Op.like]: `%${search}%` } },
+        { number: { [Op.like]: `%${search}%` } },
+      ],
+    } : {};
 
-  res.json(leads);
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
+      where: whereClause,
+      include: [leadStatusInclude],
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: serializeLeads(leads),
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error('Error searching leads:', error);
+    res.status(500).json({ message: 'Database error', error });
+  }
 };
 
 exports.leadsByDate = async (req, res) => {
   const { startDate, endDate } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
 
   if (!startDate || !endDate) {
     return res.status(400).json({ message: 'Start date and end date are required' });
   }
 
   try {
-    const leads = await Lead.findAll({
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
       where: {
         createdAt: {
           [Op.between]: [new Date(startDate), new Date(endDate)]
         }
       },
       include: [leadStatusInclude],
+      limit,
+      offset,
       order: [['createdAt', 'DESC']]
     });
 
-    res.status(200).json(serializeLeads(leads));
+    res.status(200).json({
+      success: true,
+      data: serializeLeads(leads),
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error('Error fetching leads by date:', error);
     res.status(500).json({ message: 'Database error', error });
@@ -505,13 +627,16 @@ exports.leadsByDate = async (req, res) => {
 exports.leadsByEmpIdAndDate = async (req, res) => {
   const { startDate, endDate } = req.query;
   const { emp_id } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
 
   if (!emp_id || !startDate || !endDate) {
     return res.status(400).json({ message: 'Employee ID, start date, and end date are required' });
   }
 
   try {
-    const leads = await Lead.findAll({
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
       where: {
         person_id: emp_id,
         createdAt: {
@@ -519,10 +644,23 @@ exports.leadsByEmpIdAndDate = async (req, res) => {
         }
       },
       include: [leadStatusInclude],
+      limit,
+      offset,
       order: [['createdAt', 'DESC']]
     });
 
-    res.status(200).json(serializeLeads(leads));
+    res.status(200).json({
+      success: true,
+      data: serializeLeads(leads),
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error('Error fetching leads by employee ID and date:', error);
     res.status(500).json({ message: 'Database error', error });
@@ -602,22 +740,40 @@ exports.getLeadCountByEmpId = async (req, res) => {
     res.status(500).json({ message: "Database error", error });
   }
 };
+
 exports.getFreshLeadsByEmpId = async (req, res) =>{
   const { emp_id } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+
   if(!emp_id){
     return res.status(400).json({ message: "Employee ID is required" });
   }
   try {
     const initialStatus = await getInitialLeadStatus();
-    const leads = await Lead.findAll({
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
       where : {
         person_id : emp_id,
         status_id : initialStatus?.status_id || null,
       },
       include: [leadStatusInclude],
+      limit,
+      offset,
       order: [["createdAt", "ASC"]],
     });
-    return res.status(200).json(serializeLeads(leads));
+    return res.status(200).json({
+      success: true,
+      data: serializeLeads(leads),
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   }catch(error){
     console.error("Error fetching fresh leads:", error);
     res.status(500).json({ message: "Database error", error });
@@ -794,7 +950,6 @@ exports.getLeadsByNextMeeting = async (req, res) => {
         todayFollowups,
         tomorrowFollowups,
         pendingFollowups,
-        // freshLeads,
       },
     });
   } catch (error) {
@@ -806,6 +961,9 @@ exports.getLeadsByNextMeeting = async (req, res) => {
 exports.getFilteredLeads = async (req, res) => {
   try {
     const { emp_id, startDate, endDate, status } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
 
     const whereClause = {};
 
@@ -824,14 +982,27 @@ exports.getFilteredLeads = async (req, res) => {
       whereClause.status_id = leadStatus?.status_id || null;
     }
 
-    const leads = await Lead.findAll({
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
       attributes: ['lead_id', 'name', 'number', 'person_id', 'owner', 'status_id', 'loan_type', 'createdAt'],
       where: whereClause,
       include: [leadStatusInclude],
+      limit,
+      offset,
       order: [["createdAt", "DESC"]],
     });
 
-    res.status(200).json({ leads: serializeLeads(leads) });
+    res.status(200).json({
+      success: true,
+      data: serializeLeads(leads),
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error fetching filtered leads", error);
     res.status(500).json({ message: "Server error", error });

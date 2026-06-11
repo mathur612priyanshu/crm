@@ -82,7 +82,16 @@ exports.createTemplate = async (req, res) => {
 
 exports.getAllTemplates = async (req, res) => {
   try {
-    const templates = await Template.findAll();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const { rows: templates, count: totalCount } = await Template.findAndCountAll({
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+
     const data = templates.map((template) => {
       const json = template.toJSON();
       return {
@@ -91,7 +100,18 @@ exports.getAllTemplates = async (req, res) => {
       };
     });
 
-    res.status(200).json({ success: true, data });
+    res.status(200).json({
+      success: true,
+      data,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

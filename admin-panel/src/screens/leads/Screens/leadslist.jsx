@@ -10,7 +10,8 @@ import * as XLSX from "xlsx";
 
 const LeadsList = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  // Excel modal is not used in this screen; removed for lint cleanliness.
+  // const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -24,8 +25,9 @@ const LeadsList = () => {
 
   const getTodayRange = () => {
     const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const lastDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1 );
+    const firstDay = new Date(now);
+    firstDay.setDate(firstDay.getDate() - 30);
+    const lastDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const format = (date) => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -42,8 +44,6 @@ const LeadsList = () => {
   const [toDate, setToDate] = useState(to);
 
   const fetchUsers = async (page) => {
-    console.log("================> ye func call hua")
-    console.log(`${currentPage} ${itemsPerPage} ${fromDate} ${toDate} ${searchTerm}`);
     setIsLoading(true);
     try {
       const response = await axios.get(`${API_URL}/getLeadsForAdminPanel`, {
@@ -51,63 +51,63 @@ const LeadsList = () => {
           page: page || currentPage,
           limit: itemsPerPage,
           search: searchTerm || "",
-          fromDate: fromDate || "", 
+          fromDate: fromDate || "",
           toDate: toDate || "",
         },
       });
 
       if (response.status === 200) {
-        const leads = response.data.data; // assuming response.data.data contains leads list
-        const pagination = response.data.pagination;
+        const leads = response.data?.data || [];
+        const pagination = response.data?.pagination;
 
         setUsers(leads);
         setTotalPages(pagination?.totalPages || 0);
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching leads:", error);
+      setUsers([]);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
-useEffect(() => {
-  axios.get(`${API_URL}/employees`)
-    .then(res => {
-      // Ensure res.data is an array
-      // const employeeList = Array.isArray(res.data) ? res.data : res.data.employees;
-      setEmployees(res.data.employees || []); // Fallback to empty array
-    })
-    .catch(err => {
-      console.error("Error fetching employees", err);
-      setEmployees([]); // Avoid map crash
-    });
-}, []);
+  useEffect(() => {
+    axios.get(`${API_URL}/employees`)
+      .then(res => {
+        // Ensure res.data is an array
+        // const employeeList = Array.isArray(res.data) ? res.data : res.data.employees;
+        setEmployees(res.data.employees || []); // Fallback to empty array
+      })
+      .catch(err => {
+        console.error("Error fetching employees", err);
+        setEmployees([]); // Avoid map crash
+      });
+  }, []);
 
-const handleAssignPerson = async (leadId, value) => {
-  const [empId, empName] = value.split("|");
-  try {
-    await axios.put(`${API_URL}/leads/${leadId}`, { person_id: empId, owner: empName });
-    toast.success("Assigned successfully!");
-    // window.location.reload();
+  const handleAssignPerson = async (leadId, value) => {
+    const [empId, empName] = value.split("|");
+    try {
+      await axios.put(`${API_URL}/leads/${leadId}`, { person_id: empId, owner: empName });
+      toast.success("Assigned successfully!");
+      // window.location.reload();
 
-    setUsers(prev =>
-      prev.map(u =>
-        u.lead_id === leadId ? { ...u, person_id: empId } : u
-      )
-    );
+      setUsers(prev =>
+        prev.map(u =>
+          u.lead_id === leadId ? { ...u, person_id: empId, owner: empName } : u
+        )
+      );
 
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to assign");
-  }
-};
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to assign");
+    }
+  };
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchUsers(currentPage);
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [employees]);
+    fetchUsers(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTerm, fromDate, toDate]);
 
   const handleDeleteUser = async (leadId) => {
     try {
@@ -124,30 +124,31 @@ const handleAssignPerson = async (leadId, value) => {
     }
   };
 
-const handleDownloadExcel = () => {
-  if (users.length === 0) {
-    toast.info("No leads available to download");
-    return;
-  }
+  const handleDownloadExcel = () => {
+    if (users.length === 0) {
+      toast.info("No leads available to download");
+      return;
+    }
 
-  // Create an array of rows
-  const excelData = users.map((user) => {
-    return {
-      "Lead ID": user.lead_id,
-      "Name": user.name || "N/A",
-      "Phone No.": user.number || "N/A",
-      "Assigned To": user.owner || "Unassigned",
-    };
-  });
+    // Create an array of rows
+    const excelData = users.map((user) => {
+      return {
+        "Lead ID": user.lead_id,
+        "Name": user.name || "N/A",
+        "Phone No.": user.number || "N/A",
+        "Status": user.status || "--",
+        "Assigned To": user.owner || "Unassigned",
+      };
+    });
 
-  // Create worksheet and workbook
-  const worksheet = XLSX.utils.json_to_sheet(excelData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+    // Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
 
-  // Trigger download
-  XLSX.writeFile(workbook, "Leads_Report.xlsx");
-};
+    // Trigger download
+    XLSX.writeFile(workbook, "Leads_Report.xlsx");
+  };
 
 
   const handleopenaddcallformModal = () => {
@@ -158,15 +159,10 @@ const handleDownloadExcel = () => {
     setIsFormModalOpen(false);
   };
 
-  const handleopenaddcallExcelModal = () => {
-    setIsExcelModalOpen(true);
-  };
+  // Excel modal handlers removed because this screen no longer renders AddUserExcel here.
+  // (This avoids unused-var lint errors.)
 
-  const handleCloseaddcallExcelModal = () => {
-    setIsExcelModalOpen(false);
-  };
 
-  
 
   return (
     <div>
@@ -184,75 +180,75 @@ const handleDownloadExcel = () => {
           </div>
         </div>
       )}
-      {isExcelModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          {" "}
-          <div className=" p-6 rounded w-1/3">
-            <AddUserExcel
-              handleCloseaddcallExcelModal={handleCloseaddcallExcelModal}
-            />
-          </div>
-        </div>
-      )}
+
 
       <div className="font-sans overflow-x-auto">
         {" "}
-<div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-  <h2 className="text-lg font-semibold">Leads List</h2>
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+          <h2 className="text-lg font-semibold">Leads List</h2>
 
-  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-    {/* 🔍 Search */}
-    <input
-      type="text"
-      placeholder="Search by name, email, employee ID or phone..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full md:w-[250px] px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-    />
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {/* 🔍 Search */}
+            <input
+              type="text"
+              placeholder="Search by name, email, employee ID or phone..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full md:w-[250px] px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+            />
 
-    {/* 📅 From Date */}
-    <input
-      type="date"
-      value={fromDate}
-      onChange={(e) => setFromDate(e.target.value)}
-      className="px-3 py-2 border rounded-md text-sm"
-      placeholder="From Date"
-    />
-    <div>to</div>
-    {/* 📅 To Date */}
-    <input
-      type="date"
-      value={toDate}
-      onChange={(e) => setToDate(e.target.value)}
-      className="px-3 py-2 border rounded-md text-sm"
-      placeholder="To Date"
-    />
+            {/* 📅 From Date */}
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2 border rounded-md text-sm"
+              placeholder="From Date"
+            />
+            <div>to</div>
+            {/* 📅 To Date */}
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2 border rounded-md text-sm"
+              placeholder="To Date"
+            />
 
-    {/* ✅ GO button */}
-    <button
-      onClick={() => fetchUsers(currentPage)}
-      className="bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-900"
-    >
-      GO
-    </button>
+            {/* ✅ GO button */}
+            <button
+              onClick={() => fetchUsers(currentPage)}
+              className="bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-900"
+            >
+              GO
+            </button>
 
-    {/* ➕ Add Leads */}
-    <button
-      onClick={handleopenaddcallformModal}
-      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-    >
-      Add Leads
-    </button>
+            {/* ➕ Add Leads */}
+            <button
+              onClick={handleopenaddcallformModal}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Add Leads
+            </button>
 
-    {/* 📤 Download Excel */}
-    <button
-      onClick={handleDownloadExcel}
-      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800"
-    >
-      Download Excel
-    </button>
-  </div>
-</div>
+            {/* 📤 Download Excel */}
+            <button
+              onClick={handleDownloadExcel}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800"
+            >
+              Download Excel
+            </button>
+          </div>
+        </div>
 
 
         <table className="min-w-full bg-white">
@@ -271,7 +267,10 @@ const handleDownloadExcel = () => {
                 Phonenumber
               </th>
               <th className="p-4 text-left text-xs font-semibold text-gray-800">
-                Assigned to 
+                Status
+              </th>
+              <th className="p-4 text-left text-xs font-semibold text-gray-800">
+                Assigned to
               </th>
               <th className="p-4 text-left text-xs font-semibold text-gray-800">
                 Actions
@@ -284,14 +283,17 @@ const handleDownloadExcel = () => {
               <tr
                 key={user.lead_id}
                 className="hover:bg-gray-50"
-                // onClick={() => navigate(`/lead-details/${user.lead_id}`)}
+              // onClick={() => navigate(`/lead-details/${user.lead_id}`)}
               >
-                <td className="p-4 text-[15px] text-gray-800" onClick={()=>navigate(`/lead-details/${user.lead_id}`)}>
+                <td className="p-4 text-[15px] text-gray-800" onClick={() => navigate(`/lead-details/${user.lead_id}`)}>
                   {user.lead_id}
                 </td>
-                <td className="p-4 text-[15px] text-gray-800" onClick={()=>navigate(`/lead-details/${user.lead_id}`)}>{user.name}</td>
+                <td className="p-4 text-[15px] text-gray-800" onClick={() => navigate(`/lead-details/${user.lead_id}`)}>{user.name}</td>
                 {/* <td className="p-4 text-[15px] text-gray-800">{user.email}</td> */}
-                <td className="p-4 text-[15px] text-gray-800" onClick={()=>navigate(`/lead-details/${user.lead_id}`)}>{user.number}</td>
+                <td className="p-4 text-[15px] text-gray-800" onClick={() => navigate(`/lead-details/${user.lead_id}`)}>{user.number}</td>
+                <td className="p-4 text-[15px] text-gray-800" onClick={() => navigate(`/lead-details/${user.lead_id}`)}>
+                  {user.status || "--"}
+                </td>
                 <td className="p-4 text-[15px] text-gray-800" onClick={e => e.stopPropagation()}>
                   {user.owner ? (
                     user.owner
@@ -312,7 +314,14 @@ const handleDownloadExcel = () => {
                 </td>
 
                 <td className="p-4">
-                  <button className="mr-4" title="Edit">
+                  {/* <button
+                    className="mr-4"
+                    title="Edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/lead-edit/${user.lead_id}`);
+                    }}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="w-5 fill-blue-500 hover:fill-blue-700"
@@ -327,7 +336,7 @@ const handleDownloadExcel = () => {
                         data-original="#000000"
                       />
                     </svg>
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => handleDeleteUser(user.lead_id)}
                     className="mr-4"
@@ -349,10 +358,10 @@ const handleDownloadExcel = () => {
                     </svg>
                   </button>
                   <button onClick={() => navigate(`/lead-details/${user.lead_id}`)}
-                  className="mr4 text-red-600"
-                  title="Delete"> 
-                  <FaEye/>
-                   </button>
+                    className="mr-4 text-blue-600 hover:text-blue-800"
+                    title="View">
+                    <FaEye />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -367,8 +376,9 @@ const handleDownloadExcel = () => {
       <div className="flex justify-center mt-4 gap-2">
         <button
           onClick={
-            ()=> {setCurrentPage(currentPage-1);
-              fetchUsers(currentPage-1);
+            () => {
+              setCurrentPage(currentPage - 1);
+              fetchUsers(currentPage - 1);
             }
           }
           disabled={currentPage === 1}
@@ -380,8 +390,9 @@ const handleDownloadExcel = () => {
           Page {currentPage} of {totalPages}
         </span>
         <button
-          onClick={() => {setCurrentPage(currentPage + 1);
-            fetchUsers(currentPage+1);
+          onClick={() => {
+            setCurrentPage(currentPage + 1);
+            fetchUsers(currentPage + 1);
           }}
           disabled={currentPage === totalPages}
           className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"

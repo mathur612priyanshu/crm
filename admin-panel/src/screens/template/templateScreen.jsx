@@ -86,7 +86,7 @@ function TemplateScreen() {
     <div className="p-4">
       <div className='text-right mb-4'>
         <button
-          className='bg-blue-400 text-white p-2 rounded border flex items-center gap-1'
+          className='bg-blue-600 text-white p-2 rounded border flex items-center gap-1'
           onClick={() => showAddTemplateModal(true)}
         >
           <PlusIcon className='h-5 w-5' /> New Template

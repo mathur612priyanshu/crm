@@ -12,6 +12,8 @@ const OperationsScreen = () => {
   const [statuses, setStatuses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const filteredLeads = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -36,14 +38,22 @@ const OperationsScreen = () => {
     try {
       const endpoint =
         employeeRole === "manager" ? `${API_URL}/leads` : `${API_URL}/leads/${employeeId}`;
-      const response = await axios.get(endpoint);
-      const data = Array.isArray(response.data) ? response.data : [];
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: 5000,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
+        }
+      });
+      
+      const responseData = response.data?.data || response.data?.leads || (Array.isArray(response.data) ? response.data : []);
+      
       const operationLeads =
         employeeRole === "manager"
-          ? data.filter((lead) =>
+          ? responseData.filter((lead) =>
               ["operations", "both"].includes(lead.statusDetails?.team)
             )
-          : data;
+          : responseData;
 
       setLeads(operationLeads);
     } catch (error) {
@@ -57,7 +67,7 @@ const OperationsScreen = () => {
   useEffect(() => {
     fetchStatuses();
     fetchOperationLeads();
-  }, []);
+  }, [fromDate, toDate]);
 
   const handleStatusChange = async (lead, statusId) => {
     const nextStatus = statuses.find((status) => String(status.status_id) === statusId);
@@ -86,13 +96,30 @@ const OperationsScreen = () => {
           <h2 className="text-xl font-semibold text-gray-800">Operations</h2>
           <p className="text-sm text-gray-500">File login and operations-stage leads</p>
         </div>
-        <input
-          type="text"
-          placeholder="Search operation leads..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-[280px] px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-        />
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm"
+            title="From Date"
+          />
+          <span className="text-gray-500">to</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm"
+            title="To Date"
+          />
+          <input
+            type="text"
+            placeholder="Search operation leads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full md:w-[280px] px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+          />
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">

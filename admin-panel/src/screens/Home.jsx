@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronDown, ChevronUp, BarChart2, PieChart as PieChartIcon, Users, Phone, FileText, CheckCircle, XCircle } from 'lucide-react';
 import axios from "axios";
 import API_URL from "../config";
+import { useStatuses } from '../contexts/StatusContext';
 import {
   BarChart,
   Bar,
@@ -18,6 +19,7 @@ import LeadsPopup from '../components/leadsPopup';
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const { statuses } = useStatuses();
   const [showPopup, setShowPopup] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalLeads, setModalLeads] = useState([]);
@@ -28,32 +30,33 @@ const Home = () => {
   const [todayFollowups, setTodayFollowups] = useState([]);
   const [tomorrowFollowups, setTomorrowFollowups] = useState([]);
   const [pendingFollowups, setPendingFollowups] = useState([]);
-  const freshLeads = leads.filter(lead=> lead.status==="Fresh Lead")
-  const interestedLeads = leads.filter(lead => lead.status === 'Interested');
-  const callBackLeads = leads.filter(lead => lead.status === 'Call Back');
-  const noRequirementLeads = leads.filter(lead => lead.status === 'No Requirement');
-  const followUps = leads.filter(lead => lead.status === 'Follow up');
-  const documentRejects = leads.filter(lead => lead.status === 'Document Reject');
-  const documentsPending = leads.filter(lead => lead.status === 'Document Pending');
-  const fileLogins = leads.filter(lead => lead.status === 'File Login');
-  const loanSections = leads.filter(lead => lead.status === 'Loan Section');
-  const loanDisbursements = leads.filter(lead => lead.status === 'Loan Disbursement');
-  const homeLoanLeads = leads.filter(lead => lead.loan_type === 'Home Loan');
-  const mortgageLoanLeads = leads.filter(lead => lead.loan_type === 'Mortgage Loan');
-  const userCarLoanLeads = leads.filter(lead => lead.loan_type === 'User Car Loan');
-  const businessLoanLeads = leads.filter(lead => lead.loan_type === 'Business Loan');
-  const personalLoanLeads = leads.filter(lead => lead.loan_type === 'Personal Loan');
-  const dodLoanLeads = leads.filter(lead => lead.loan_type === 'DOD');
-  const ccOdLeads = leads.filter(lead => lead.loan_type === 'CC/OD');
-  const cgtmsmeLeads = leads.filter(lead => lead.loan_type === 'CGTMSME');
-  const mutualFundLeads = leads.filter(lead => lead.loan_type === 'Mutual Fund');
-  const insuranceLeads = leads.filter(lead => lead.loan_type === 'Insurance');
-  const otherLeads = leads.filter(lead => lead.loan_type === 'Other');
+  const leadsList = Array.isArray(leads) ? leads : [];
+
+  const safeArray = (arr) => (Array.isArray(arr) ? arr : []);
+
+  // Dynamic status counts based on backend statuses
+  const leadStatusCounts = {};
+  statuses.forEach(status => {
+    leadStatusCounts[status.name] = safeArray(leadsList).filter(lead => lead.status === status.name);
+  });
+
+  const homeLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Home Loan');
+  const mortgageLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Mortgage Loan');
+  const userCarLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'User Car Loan');
+  const businessLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Business Loan');
+  const personalLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Personal Loan');
+  const dodLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'DOD');
+  const ccOdLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'CC/OD');
+  const cgtmsmeLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'CGTMSME');
+  const mutualFundLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Mutual Fund');
+  const insuranceLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Insurance');
+  const otherLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Other');
   const navigate = useNavigate();
   
   const getTodayRange = () => {
     const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const firstDay = new Date(now);
+    firstDay.setDate(firstDay.getDate() - 30);
     const lastDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
     const format = (date) => {
       const year = date.getFullYear();
@@ -67,13 +70,14 @@ const Home = () => {
     };
   };
 
-  useEffect(() => {
-    fetchData(fromDate, toDate);
-  },[]);
-  
   const { from, to } = getTodayRange();
   const [fromDate, setFromDate] = useState(from);
   const [toDate, setToDate] = useState(to);
+
+  useEffect(() => {
+    fetchData(fromDate, toDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDate, toDate]);
 
   const fetchData = async (startDate, endDate) => {
     try {
@@ -85,23 +89,37 @@ const Home = () => {
       });
       const employeeResponse = await axios.get(`${API_URL}/employees`);
       const followupsResponse = await axios.get(`${API_URL}/getFollowupsCount`);
-      // console.log(followupsResponse.data.data.todayFollowups);
-      setCalls(callResponse.data.calls);
-      setLeads(leadResponse.data);
-      setEmployees(employeeResponse.data.employees);
-      setTodayFollowups(followupsResponse.data.data.todayFollowups);
-      setTomorrowFollowups(followupsResponse.data.data.tomorrowFollowups);
-      setPendingFollowups(followupsResponse.data.data.pendingFollowups);
+
+      const callsData = callResponse?.data?.calls;
+      const leadsData = leadResponse?.data;
+      const employeesData = employeeResponse?.data?.employees;
+      const followupsData = followupsResponse?.data?.data;
+
+      setCalls(Array.isArray(callsData) ? callsData : []);
+      setLeads(Array.isArray(leadsData) ? leadsData : Array.isArray(leadsData?.data) ? leadsData.data : []);
+      setEmployees(Array.isArray(employeesData) ? employeesData : []);
+
+      setTodayFollowups(Array.isArray(followupsData?.todayFollowups) ? followupsData.todayFollowups : []);
+      setTomorrowFollowups(Array.isArray(followupsData?.tomorrowFollowups) ? followupsData.tomorrowFollowups : []);
+      setPendingFollowups(Array.isArray(followupsData?.pendingFollowups) ? followupsData.pendingFollowups : []);
     } catch (error) {
       console.error("Error fetching calls by date range", error);
-      return [];
+      setCalls([]);
+      setLeads([]);
+      setEmployees([]);
+      setTodayFollowups([]);
+      setTomorrowFollowups([]);
+      setPendingFollowups([]);
     }
   };
 
-  const generateEmployeeStats = (employees, leads, calls) => {
+  const generateEmployeeStats = (employees, leads, calls, currentStatuses) => {
     return employees.map((emp) => {
       const empLeads = leads.filter((lead) => lead.person_id === emp.emp_id);
       const empCalls = calls.filter((call) => call.emp_id === emp.emp_id);
+
+      // Dynamically use the second status as "Interested" or fallback to 'Interested'
+      const activeStatus = currentStatuses.length > 1 ? currentStatuses[1].name : (currentStatuses.length > 0 ? currentStatuses[0].name : "Interested");
 
       return {
         id: emp.emp_id,
@@ -113,7 +131,7 @@ const Home = () => {
           .toUpperCase(),
         totalCalls: empCalls.length,
         totalLeads: empLeads.length,
-        interestedLeads: empLeads.filter((lead) => lead.status === "Interested").length,
+        interestedLeads: empLeads.filter((lead) => lead.status === activeStatus).length,
       };
     });
   };
@@ -125,28 +143,22 @@ const Home = () => {
       setModalLeads(calls);
     } else if (title === 'Total Leads') {
       setModalLeads(leads);
-    } else if (title === 'Interested Leads') {
-      setModalLeads(interestedLeads);
-    } else if (title === 'Follow ups') {  
-      setModalLeads(followUps);
-    } else if (title === 'File Login') {
-      setModalLeads(fileLogins);
-    } else if (title === 'Documents Pending') {
-      setModalLeads(documentsPending);
     } else if (title === 'Today Followups') {
       setModalLeads(todayFollowups);
     } else if(title === 'Tomorrow Followups') {
       setModalLeads(tomorrowFollowups);
-    }else if(title === 'Pending Followups') {
+    } else if(title === 'Pending Followups') {
       setModalLeads(pendingFollowups);
+    } else {
+      setModalLeads(leadStatusCounts[title] || []);
     }
     setShowPopup(true);
   };
 
   useEffect(() => {
-    const stats = generateEmployeeStats(employees, leads, calls);
+    const stats = generateEmployeeStats(employees, leads, calls, statuses);
     setEmployeeStats(stats);
-  }, [employees, leads, calls]);
+  }, [employees, leads, calls, statuses]);
 
   const metricsData1 = [
     { title: 'Total Calls', value: calls.length, icon: <Phone className="w-5 h-5" />},
@@ -156,26 +168,44 @@ const Home = () => {
   ];
 
   const matricsData2 = [
-    { title: 'Interested Leads', value: interestedLeads.length, icon: <CheckCircle className="w-5 h-5" /> },
-    { title: 'Follow ups', value: followUps.length, icon: <FileText className="w-5 h-5" /> },
-    { title: 'File Login', value: fileLogins.length, icon: <FileText className="w-5 h-5" /> },
-    { title: 'Documents Pending', value: documentsPending.length, icon: <XCircle className="w-5 h-5" /> },
-    { title: 'Fresh Leads', value: freshLeads.length, icon: <Users className="w-5 h-5" /> },
+    ...statuses.map((status, idx) => {
+      const leadsForStatus = leadStatusCounts[status.name] || [];
+      const icons = [
+        <Users className="w-5 h-5" />,
+        <CheckCircle className="w-5 h-5" />,
+        <FileText className="w-5 h-5" />,
+        <XCircle className="w-5 h-5" />,
+        <Calendar className="w-5 h-5" />
+      ];
+      return {
+        title: status.name,
+        value: leadsForStatus.length,
+        icon: icons[idx % icons.length]
+      };
+    }),
     { title: 'Pending Followups', value: pendingFollowups.length, icon: <Calendar className="w-5 h-5" /> }
   ];
 
-  const leadsData = [
-    { name: "Fresh Leads", value: freshLeads, color: "#6366f1" },               // Indigo
-    { name: "Interested", value: interestedLeads.length, color: "#3b82f6" },    // Blue
-    { name: "Call Back", value: callBackLeads.length, color: "#60a5fa" },       // Sky Blue
-    { name: "Follow up", value: followUps.length, color: "#a5b4fc" },           // Indigo
-    { name: "No Requirement", value: noRequirementLeads.length, color: "#f87171" }, // Red
-    { name: "Document Reject", value: documentRejects.length, color: "#10b981" },   // Green
-    { name: "Document Pending", value: documentsPending.length, color: "#f59e0b" }, // Amber
-    { name: "File Login", value: fileLogins.length, color: "#6366f1" },             // Indigo
-    { name: "Loan Section", value: loanSections.length, color: "#ec4899" },         // Pink
-    { name: "Loan Disbursement", value: loanDisbursements.length, color: "#22d3ee" } // Cyan
-  ];
+  const leadsData = statuses.map((status, idx) => {
+    const leadsForStatus = leadStatusCounts[status.name] || [];
+
+    return {
+      name: status.name,
+      value: leadsForStatus.length,
+      color: status.color || [
+        "#6366f1",
+        "#3b82f6",
+        "#60a5fa",
+        "#a5b4fc",
+        "#f87171",
+        "#10b981",
+        "#f59e0b",
+        "#6366f1",
+        "#ec4899",
+        "#22d3ee",
+      ][idx % 10],
+    };
+  });
 
   const pieData = [
     { name: 'Home Loans', value: homeLoanLeads.length, color: '#3b82f6' },

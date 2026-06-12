@@ -52,13 +52,13 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
     });
     updateCall();
     if (feedbackStatus == null) {
-      feedbackStatus = widget.lead.status;
+      feedbackStatus = (widget.lead.status == null || widget.lead.status.toString().isEmpty) ? null : widget.lead.status;
     }
     if (loanType == null) {
-      loanType = widget.lead.loanType;
+      loanType = (widget.lead.loanType == null || widget.lead.loanType.toString().isEmpty) ? null : widget.lead.loanType;
     }
     if (priority == null) {
-      priority = widget.lead.priority;
+      priority = (widget.lead.priority == null || widget.lead.priority.toString().isEmpty) ? null : widget.lead.priority;
     }
 
     if (nextMeetingController.text.isEmpty) {
@@ -282,6 +282,38 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       }
     }
 
+    final priorityItems = ["High", "Medium", "Low"];
+    if (priority != null && !priorityItems.contains(priority)) {
+      priorityItems.add(priority!);
+    }
+    if (widget.lead != null && widget.lead.priority != null && widget.lead.priority.toString().isNotEmpty) {
+      if (!priorityItems.contains(widget.lead.priority.toString())) {
+        priorityItems.add(widget.lead.priority.toString());
+      }
+    }
+
+    final loanTypeItems = [
+      "Home Loan",
+      "Mortgage Loan",
+      "User Car Loan",
+      "Business Loan",
+      "Personal Loan",
+      "DOD",
+      "CC/OD",
+      "CGTMSME",
+      "Mutual Fund",
+      "Insurance",
+      "Other",
+    ];
+    if (loanType != null && !loanTypeItems.contains(loanType)) {
+      loanTypeItems.add(loanType!);
+    }
+    if (widget.lead != null && widget.lead.loanType != null && widget.lead.loanType.toString().isNotEmpty) {
+      if (!loanTypeItems.contains(widget.lead.loanType.toString())) {
+        loanTypeItems.add(widget.lead.loanType.toString());
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -349,19 +381,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                 buildDropdown(
                   value: loanType,
                   hint: 'Select Loan Type',
-                  items: [
-                    "Home Loan",
-                    "Mortgage Loan",
-                    "User Car Loan",
-                    "Business Loan",
-                    "Personal Loan",
-                    "DOD",
-                    "CC/OD",
-                    "CGTMSME",
-                    "Mutual Fund",
-                    "Insurance",
-                    "Other",
-                  ],
+                  items: loanTypeItems,
                   onChanged:
                       (val) => setState(() {
                         loanType = val!;
@@ -372,14 +392,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                 buildDropdown(
                   value: priority,
                   hint: 'Select Priority',
-                  items: [
-                    // 'High Priority and Urgent',
-                    // 'Med',
-                    // 'Lower',
-                    // "Important",
-                    "Priority",
-                    "Non-Priority",
-                  ],
+                  items: priorityItems,
                   onChanged: (val) => setState(() => priority = val!),
                 ),
 

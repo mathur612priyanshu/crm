@@ -74,7 +74,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       priority: priority!,
       next_meeting: nextMeetingController.text,
       est_budget: budgetController.text,
-      remark: remarkController.text.trim().isNotEmpty ? remarkController.text : null,
+      remark: remarkController.text,
     );
 
     History newHistory = History(

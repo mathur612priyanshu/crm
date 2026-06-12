@@ -34,7 +34,7 @@ const Task = sequelize.define(
         //     type: DataTypes.STRING,
         // },
         priority: {
-            type : DataTypes.STRING,
+            type : DataTypes.ENUM('High', 'Medium', 'Low'),
         },
         // is_active: {
         //     type: DataTypes.BOOLEAN
@@ -49,7 +49,7 @@ const Task = sequelize.define(
             type: DataTypes.STRING,
         },
         status: {
-            type : DataTypes.STRING,
+            type : DataTypes.ENUM('Initial', 'On Going', 'Completed'),
         }
     },
     {

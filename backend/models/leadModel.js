@@ -38,11 +38,11 @@ const Lead = sequelize.define(
     //   type: DataTypes.DATEONLY
     // },
     source: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM('Self', 'Refrence', 'Bulk excel'),
       allowNull: true,
     },
     priority: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM('High', 'Medium', 'Low'),
       allowNull: true,
     },
     status_id: {
@@ -54,7 +54,7 @@ const Lead = sequelize.define(
       allowNull: true,
     },
     employment_type: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM('Self Employed', 'Salary Person'),
     },
     // loan_term: {
     //   type: DataTypes.STRING
@@ -72,8 +72,8 @@ const Lead = sequelize.define(
       allowNull: true
     },
     loan_type: {
-      type : DataTypes.TEXT,
-      allowNull: null
+      type : DataTypes.ENUM('Home Loan', 'Mortgage Loan', 'User Car Loan', 'Business Loan', 'Personal Loan', 'DOD', 'CC/OD', 'CGTMSME', 'Mutual Fund', 'Insurance', 'Other'),
+      allowNull: true
     },
     est_budget: {
       type: DataTypes.STRING,
@@ -99,7 +99,7 @@ Lead.belongsTo(LeadStatus, {
 });
 
 // Create table if not exists
-Lead.sync({ alter: true })
+Lead.sync({ alter: false })
   .then(() => {
     console.log("Lead table created");
   })

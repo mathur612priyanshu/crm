@@ -326,7 +326,7 @@ exports.updateLead = async (req, res) => {
         const updatedLead = await Lead.findByPk(id);
         const statusChanged = updateData.status_id && previousStatusId !== updateData.status_id;
         const nextMeetingChanged = updateData.next_meeting && lead.next_meeting !== updateData.next_meeting;
-        const remarkChanged = updateData.remark && lead.remark !== updateData.remark;
+        const remarkChanged = updateData.remark !== undefined && lead.remark !== updateData.remark;
         const loanTypeChanged = updateData.loan_type && lead.loan_type !== updateData.loan_type;
         const priorityChanged = updateData.priority && lead.priority !== updateData.priority;
         const sourceChanged = updateData.source && lead.source !== updateData.source;

@@ -283,8 +283,8 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         widget.contactNumber == null ? "" : widget.contactNumber;
     emailController.text = widget.email == null ? "" : widget.email;
     sourceController.text = widget.source == null ? "" : widget.source;
-    levelController.text = widget.priority == null ? "" : widget.priority;
-    statusController.text = widget.status == null ? "" : widget.status;
+    levelController.text = (widget.priority == null || widget.priority!.isEmpty) ? "Low" : widget.priority!;
+    statusController.text = widget.status == null ? "" : widget.status!;
     nextMeetingTimeController.text =
         widget.next_meeting == null ? "" : widget.next_meeting;
     referenceController.text = widget.refrence == null ? "" : widget.refrence;
@@ -444,7 +444,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                     child: TextFormField(
                       controller: nextMeetingTimeController,
                       decoration: const InputDecoration(
-                        hintText: 'Select Next Meeting Date',
+                        hintText: 'Select Next Meeting Date *',
                         border: OutlineInputBorder(),
                       ),
                     ),

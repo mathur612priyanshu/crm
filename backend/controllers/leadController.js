@@ -127,7 +127,7 @@ const addLeadHistory = async ({ lead, previousStatusId, actor, remark }) => {
     previous_status_id: previousStatusId || null,
     changed_by_emp_id: actor?.emp_id || null,
     loanType: lead.loan_type,
-    remark: remark || lead.remark,
+    remark: remark !== undefined ? remark : lead.remark,
   });
 };
 
@@ -181,37 +181,38 @@ exports.importLeadsFromExcel = async (req, res) => {
     const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     let count = 0;
+    let duplicates = 0;
+    let failures = 0;
 
     for (const row of sheetData) {
       const {
         name,
         number,
         email,
-        dob,
-        branch,
+        // dob,
         source,
         priority,
         next_meeting,
         employment_type,
-        loan_term,
+        // loan_term,
         refrence,
         description,
         address,
         loan_type,
         est_budget,
         remark,
-        salary,
+        // salary,
       } = row;
 
       // 🔁 Skip if name or number missing
       if (!name || !number) continue;
 
       // 🛠️ Manually add +1 day to dates if valid
-      let dobDate = null;
-      if (dob instanceof Date && !isNaN(dob)) {
-        dob.setDate(dob.getDate() + 1);
-        dobDate = dob;
-      }
+      // let dobDate = null;
+      // if (dob instanceof Date && !isNaN(dob)) {
+      //   dob.setDate(dob.getDate() + 1);
+      //   dobDate = dob;
+      // }
 
       let meetingDate = null;
       if (next_meeting instanceof Date && !isNaN(next_meeting)) {
@@ -219,41 +220,57 @@ exports.importLeadsFromExcel = async (req, res) => {
         meetingDate = next_meeting;
       }
 
-      const newLead = await Lead.create({
-        name,
-        number,
-        email,
-        dob: dobDate,
-        branch,
-        source,
-        priority,
-        next_meeting: meetingDate,
-        employment_type,
-        loan_term,
-        refrence,
-        description,
-        address,
-        loan_type,
-        est_budget,
-        remark,
-        salary,
-        status_id: initialStatus?.status_id || null,
-        person_id: null,
-        owner: null,
-      });
+      try {
+        const newLead = await Lead.create({
+          name,
+          number,
+          email,
+          // dob: dobDate,
+          source,
+          priority,
+          next_meeting: meetingDate,
+          employment_type,
+          // loan_term,
+          refrence,
+          description,
+          address,
+          loan_type,
+          est_budget,
+          remark,
+          // salary,
+          status_id: initialStatus?.status_id || null,
+          person_id: null,
+          owner: null,
+        });
 
-      await addLeadHistory({
-        lead: newLead,
-        previousStatusId: null,
-        actor: { emp_id: null, role: EMPLOYEE_ROLES.MANAGER },
-        remark,
-      });
+        await addLeadHistory({
+          lead: newLead,
+          previousStatusId: null,
+          actor: { emp_id: null, role: EMPLOYEE_ROLES.MANAGER },
+          remark,
+        });
 
-      count++;
+        count++;
+      } catch (err) {
+        if (err.name === "SequelizeUniqueConstraintError" || (err.errors && err.errors.some(e => e.type === 'unique violation'))) {
+          duplicates++;
+        } else {
+          console.error(`❌ Error importing row for number ${number}:`, err);
+          failures++;
+        }
+      }
+    }
+
+    let resultMessage = `Successfully imported ${count} unassigned leads.`;
+    if (duplicates > 0) {
+      resultMessage += ` Skipped ${duplicates} duplicate numbers.`;
+    }
+    if (failures > 0) {
+      resultMessage += ` Failed to import ${failures} rows due to database errors.`;
     }
 
     return res.status(200).json({
-      message: `Successfully imported ${count} unassigned leads`,
+      message: resultMessage,
     });
 
   } catch (error) {

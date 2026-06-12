@@ -117,40 +117,36 @@ const UserDetailScreen = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Profile Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-100">
-            <img 
-              alt="Profile" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-800">{employee.ename}</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <p className="text-gray-600">Employee ID</p>
-                <p className="font-medium">{employee.emp_id}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Phone Number</p>
-                <p className="font-medium">{employee.phone}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Email</p>
-                <p className="font-medium">{employee.email}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Password</p>
-                <p className="font-medium">{employee.password}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Role</p>
-                <p className="font-medium capitalize">{employee.role || "calling"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Status</p>
-                <p className="font-medium capitalize">{employee.status || "active"}</p>
-              </div>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-gray-800">{employee.ename}</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <p className="text-gray-600">Employee ID</p>
+              <p className="font-medium">{employee.emp_id}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Username</p>
+              <p className="font-medium">{employee.username || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Phone Number</p>
+              <p className="font-medium">{employee.phone}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Email</p>
+              <p className="font-medium">{employee.email}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Password</p>
+              <p className="font-medium">{employee.password}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Role</p>
+              <p className="font-medium capitalize">{employee.role || "calling"}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Status</p>
+              <p className="font-medium capitalize">{employee.status || "active"}</p>
             </div>
           </div>
         </div>

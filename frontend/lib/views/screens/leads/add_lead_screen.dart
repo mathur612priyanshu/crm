@@ -8,6 +8,7 @@ import 'package:capital_care/views/widgets/custom_button.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class AddLeadScreen extends StatefulWidget {
@@ -17,8 +18,7 @@ class AddLeadScreen extends StatefulWidget {
   final lead_id;
   var contactName;
   var contactNumber;
-  // var email;
-  // var branch;
+  var email;
   var source;
   var priority;
   var status;
@@ -31,6 +31,7 @@ class AddLeadScreen extends StatefulWidget {
   // var dob;
   var loanAmount;
   var employmentType;
+  // var salary;
   // var loanTerm;
   AddLeadScreen({
     super.key,
@@ -40,8 +41,7 @@ class AddLeadScreen extends StatefulWidget {
     this.lead_id,
     this.contactName,
     this.contactNumber,
-    // this.email,
-    // this.branch,
+    this.email,
     this.source,
     this.address,
     this.description,
@@ -54,6 +54,7 @@ class AddLeadScreen extends StatefulWidget {
     // this.dob,
     this.loanAmount,
     this.employmentType,
+    // this.salary,
     // this.loanTerm,
   });
 
@@ -64,30 +65,30 @@ class AddLeadScreen extends StatefulWidget {
 class _AddLeadScreenState extends State<AddLeadScreen> {
   final TextEditingController contactNameController = TextEditingController();
   final TextEditingController contactNumberController = TextEditingController();
-  // final TextEditingController emailController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController ownerController = TextEditingController();
   final TextEditingController referenceController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController loanPercentageController =
       TextEditingController();
-  // TextEditingController branchController = TextEditingController();
   TextEditingController sourceController = TextEditingController();
   TextEditingController levelController = TextEditingController();
   TextEditingController statusController = TextEditingController();
   TextEditingController nextMeetingTimeController = TextEditingController();
   TextEditingController loanTypeController = TextEditingController();
   TextEditingController addressController = TextEditingController();
-  // TextEditingController dobController = TextEditingController();
+  // final TextEditingController dobController = TextEditingController();
   TextEditingController loanAmountController = TextEditingController();
   TextEditingController employmentTypeController = TextEditingController();
+  // final TextEditingController salaryController = TextEditingController();
   // TextEditingController LoanTermController = TextEditingController();
   TextEditingController remarkController = TextEditingController();
   File? lastSalaryController;
   File? cibilController;
   File? identityController;
   File? fileDetailsController;
+  bool _isSubmitting = false;
 
-  // List<String> branchOptions = ["Default"];
   List<String> sourceOptions = [
     // "Internet",
     // "Newspaper",
@@ -101,8 +102,9 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
     // "Mid",
     // "Important",
     // "High Priority and Important",
-    "Priority",
-    "Non-Priority",
+    "High",
+    "Medium",
+    "Low",
   ];
   List<String> statusOptions = [
     "Interested",
@@ -134,19 +136,27 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   List<String> loanTerm = ["Monthly", "Yearly"];
 
   void handleSubmit() async {
+    if (_isSubmitting) return;
+
     if (contactNameController.text.isEmpty ||
         contactNumberController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Name and Number can't be null")));
-    } else {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
       Leads lead = Leads(
         person_id: widget.userId,
         name: contactNameController.text,
         number: contactNumberController.text,
-        // email: emailController.text,
+        email: emailController.text,
         owner: ownerController.text,
-        // branch: branchController.text,
         source: sourceController.text,
         priority: levelController.text,
         status: statusController.text,
@@ -156,56 +166,84 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         description: descriptionController.text,
         address: addressController.text,
         loanType: loanTypeController.text,
-        // dob: dobController.text,
         employment_type: employmentTypeController.text,
-        // loan_term: LoanTermController.text,
         est_budget: loanAmountController.text,
       );
+
       Leads oldLead = await ApiService.getLeadByNumber(
         contactNumberController.text,
       );
+
+      bool isSuccess = false;
+
       if (widget.title == "Add Lead") {
         if (oldLead.lead_id != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Lead with this number already exists")),
+            const SnackBar(
+              content: Text("Lead with this number already exists"),
+              backgroundColor: Colors.red,
+            ),
           );
+          setState(() {
+            _isSubmitting = false;
+          });
           return;
         }
-        // print("==============================>${oldLead.lead_id}");
-        await Provider.of<LeadProvider>(
+        int newId = await Provider.of<LeadProvider>(
           context,
           listen: false,
         ).addLead(lead);
+        isSuccess = newId != -1;
       } else {
-        if (oldLead.lead_id != widget.lead_id) {
+        if (oldLead.lead_id != null && oldLead.lead_id != widget.lead_id) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text("You cannot assign this number to this lead"),
+              backgroundColor: Colors.red,
             ),
           );
+          setState(() {
+            _isSubmitting = false;
+          });
           return;
         }
-        Provider.of<LeadProvider>(
+        isSuccess = await Provider.of<LeadProvider>(
           context,
           listen: false,
         ).updateLead(lead, widget.lead_id);
       }
-      // Backend creates the lead history entry so employee, status and time stay consistent.
-      // bool success1 =
-      //     widget.title == "Add Lead"
-      //         ? await ApiService.addLead(lead)
-      //         : await ApiService.updateLead(widget.lead_id, lead);
-      // print("=========================================> ${dobController.text}");
 
-      // Provider.of<LeadProvider>(context, listen: false).addLead(lead);
-      // ScaffoldMessenger.of(
-      //   context,
-      // ).showSnackBar(SnackBar(content: Text(success1 ? "success" : "Error")));
-      // handleSubmission2(idOfLead);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LeadsScreen()),
-      );
+      if (isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.title == "Add Lead"
+                ? "Lead added successfully!"
+                : "Lead updated successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LeadsScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.title == "Add Lead"
+                ? "Failed to add lead. Please try again."
+                : "Failed to update lead. Please try again."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    } catch (e) {
+      print("Error submitting lead: $e");
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -243,8 +281,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
 
     contactNumberController.text =
         widget.contactNumber == null ? "" : widget.contactNumber;
-    // emailController.text = widget.email == null ? "" : widget.email;
-    // branchController.text = widget.branch == null ? "" : widget.branch;
+    emailController.text = widget.email == null ? "" : widget.email;
     sourceController.text = widget.source == null ? "" : widget.source;
     levelController.text = widget.priority == null ? "" : widget.priority;
     statusController.text = widget.status == null ? "" : widget.status;
@@ -262,6 +299,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
     // LoanTermController.text = widget.loanTerm == null ? "" : widget.loanTerm;
     employmentTypeController.text =
         widget.employmentType == null ? "" : widget.employmentType;
+    // salaryController.text = widget.salary == null ? "" : widget.salary;
   }
 
   Future<void> loadLeadStatuses() async {
@@ -284,6 +322,9 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   @override
   void dispose() {
     contactNameController.dispose();
+    emailController.dispose();
+    // salaryController.dispose();
+    // dobController.dispose();
     ownerController.dispose();
     referenceController.dispose();
     descriptionController.dispose();
@@ -324,21 +365,13 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                 maxLine: 1,
               ),
               const SizedBox(height: 16),
-              // CustomTextField(hint: "Email", controller: emailController),
+              CustomTextField(hint: "Email", controller: emailController),
               const SizedBox(height: 12),
 
               const SectionTitle(title: "Company Other Details"),
               const SizedBox(height: 8),
               CustomTextField(hint: "Owner", controller: ownerController),
               const SizedBox(height: 12),
-              // CustomDropdown(
-              //   hint: "-- Select Branch --",
-              //   options: branchOptions,
-              //   onChange: (value) {
-              //     branchController.text = value;
-              //   },
-              // ),
-              // const SizedBox(height: 12),
               CustomDropdown(
                 hint:
                     widget.source == null || widget.source.isEmpty
@@ -358,7 +391,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               CustomDropdown(
                 hint:
                     widget.priority == null || widget.priority.isEmpty
-                        ? "Non-Priority"
+                        ? "Low"
                         : widget.priority,
                 options: levelOptions,
                 onChange: (value) {
@@ -403,18 +436,14 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                           pickedTime.minute,
                         );
 
-                        // Format as desired, e.g., YYYY-MM-DD HH:MM
-                        nextMeetingTimeController.text =
-                            finalDateTime.toString();
-                        // OR use intl package for prettier format:
-                        // nextMeetingTimeController.text = DateFormat('yyyy-MM-dd HH:mm').format(finalDateTime);
+                        nextMeetingTimeController.text = finalDateTime.toString();
                       }
                     }
                   },
                   child: AbsorbPointer(
                     child: TextFormField(
                       controller: nextMeetingTimeController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Select Next Meeting Date',
                         border: OutlineInputBorder(),
                       ),
@@ -463,7 +492,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               //   child: AbsorbPointer(
               //     child: TextFormField(
               //       controller: dobController,
-              //       decoration: InputDecoration(
+              //       decoration: const InputDecoration(
               //         hintText: 'Select Date of Birth',
               //         border: OutlineInputBorder(),
               //       ),
@@ -490,6 +519,13 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              // CustomTextField(
+              //   hint: "Enter Salary",
+              //   controller: salaryController,
+              //   keyboardType: TextInputType.number,
+              //   maxLine: 1,
+              // ),
+              // const SizedBox(height: 16),
               // CustomDropdown(
               //   hint: widget.loanTerm == null ? "Loan Term" : widget.loanTerm,
               //   options: loanTerm,
@@ -554,10 +590,12 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               // ),
               // SizedBox(height: 20),
               CustomButton(
-                text: widget.title,
-                onPressed: () {
-                  handleSubmit();
-                },
+                text: _isSubmitting ? "Saving..." : widget.title,
+                onPressed: _isSubmitting
+                    ? null
+                    : () {
+                        handleSubmit();
+                      },
               ),
             ],
           ),

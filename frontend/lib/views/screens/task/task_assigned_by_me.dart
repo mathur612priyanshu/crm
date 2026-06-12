@@ -380,6 +380,7 @@ class _TasksAssignedByMeScreenState extends State<TasksAssignedByMeScreen> {
 
 String formatDateTime(String dateTimeString) {
   if (dateTimeString.isEmpty) return "";
-  final dateTime = DateTime.parse(dateTimeString);
+  final dateTime = DateTime.tryParse(dateTimeString);
+  if (dateTime == null) return dateTimeString; // fallback to original string if not parsable
   return DateFormat('d MMM, yyyy hh:mm a').format(dateTime);
 }

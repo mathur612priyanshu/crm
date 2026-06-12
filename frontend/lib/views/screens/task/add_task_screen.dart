@@ -176,7 +176,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               buildDropdown(
                 value: priority,
                 hint: 'Select Priority',
-                items: ["Priority", "Non-Priority"],
+                items: ["High", "Medium", "Low"],
                 onChanged: (val) => setState(() => priority = val),
               ),
 

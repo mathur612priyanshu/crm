@@ -24,7 +24,9 @@ Future<void> showEditTaskDialog(Task task, BuildContext context) async {
 
   DateTime? startDate = DateTime.tryParse(task.start_date);
   DateTime? endDate = DateTime.tryParse(task.end_date);
-  String? selectedPriority = task.priority;
+  String? selectedPriority = ["High", "Medium", "Low"].contains(task.priority) 
+      ? task.priority 
+      : "Low";
   String? selectedStatus = task.status;
 
   await showDialog(
@@ -64,7 +66,7 @@ Future<void> showEditTaskDialog(Task task, BuildContext context) async {
                   DropdownButtonFormField<String>(
                     value: selectedPriority,
                     items:
-                        ["High", "Mid", "Low"]
+                        ["High", "Medium", "Low"]
                             .map(
                               (priority) => DropdownMenuItem(
                                 value: priority,

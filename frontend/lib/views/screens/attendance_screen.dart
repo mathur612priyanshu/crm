@@ -192,64 +192,72 @@ class _AttendancescreenState extends State<Attendancescreen> {
   // }
 
   Future<void> _checkLocationAndMarkAttendance() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() => attendanceStatus = 'Device location is Disabled');
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() => attendanceStatus = 'Location permissions are denied.');
+    setState(() => isLoading = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() => attendanceStatus = 'Device location is Disabled');
         return;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      setState(
-        () => attendanceStatus = 'Location permissions are permanently denied',
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() => attendanceStatus = 'Location permissions are denied.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(
+          () => attendanceStatus = 'Location permissions are permanently denied',
+        );
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
       );
-      return;
-    }
 
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+      double defaultLat = 28.583967;
+      double defaultLng = 77.313246;
+      double allowedRadius = 20.0;
 
-    double defaultLat = 28.583967;
-    double defaultLng = 77.313246;
-    double allowedRadius = 20.0;
+      try {
+        final settings = await ApiService.fetchSettings();
+        if (settings != null && settings['office_location'] != null) {
+          defaultLat = (settings['office_location']['lat'] as num).toDouble();
+          defaultLng = (settings['office_location']['lng'] as num).toDouble();
+          allowedRadius = (settings['office_location']['radius'] as num).toDouble();
+        }
+      } catch (e) {
+        print("Could not parse dynamic settings: $e");
+      }
 
-    try {
-      final settings = await ApiService.fetchSettings();
-      if (settings != null && settings['office_location'] != null) {
-        defaultLat = (settings['office_location']['lat'] as num).toDouble();
-        defaultLng = (settings['office_location']['lng'] as num).toDouble();
-        allowedRadius = (settings['office_location']['radius'] as num).toDouble();
+      double distanceInMeters = Geolocator.distanceBetween(
+        defaultLat,
+        defaultLng,
+        position.latitude,
+        position.longitude,
+      );
+
+      if (distanceInMeters <= allowedRadius) {
+        if (isAttendanceMarked) {
+          await _closeAttendance();
+        } else {
+          await _markAttendanceStart();
+        }
+      } else {
+        setState(() {
+          attendanceStatus = 'You are not within ${allowedRadius.toInt()} meters of office.';
+        });
       }
     } catch (e) {
-      print("Could not parse dynamic settings: $e");
-    }
-
-    double distanceInMeters = Geolocator.distanceBetween(
-      defaultLat,
-      defaultLng,
-      position.latitude,
-      position.longitude,
-    );
-
-    if (distanceInMeters <= allowedRadius) {
-      if (isAttendanceMarked) {
-        await _closeAttendance();
-      } else {
-        await _markAttendanceStart();
-      }
-    } else {
-      setState(() {
-        attendanceStatus = 'You are not within ${allowedRadius.toInt()} meters of office.';
-      });
+      print("Error marking attendance: $e");
+      setState(() => attendanceStatus = 'An error occurred. Please try again.');
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -539,19 +547,26 @@ class _AttendancescreenState extends State<Attendancescreen> {
                               : _handleMarkAttendancePress,
                       child:
                           isLoading
-                              ? null
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : Text(
-                                isAttendanceMarked
-                                    ? "Close Attendance"
-                                    : 'Mark Attendance',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
+                                  isAttendanceMarked
+                                      ? "Close Attendance"
+                                      : 'Mark Attendance',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 40,
                           vertical: 15,
                         ),

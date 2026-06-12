@@ -145,13 +145,18 @@ class ApiService {
 
   static Future<int> addLead(Leads lead) async {
     final url = Uri.parse("$baseUrl/submit-lead");
+    final token = await secureStorage.read(key: "auth_token");
+    final headers = {
+      "Content-Type": "application/json",
+      if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+    };
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: headers,
       body: jsonEncode(lead.toJson()),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       // print("lead added : ${response.body}");
       final Map<String, dynamic> jsonData = jsonDecode(response.body);
       // print(
@@ -464,7 +469,13 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        List<dynamic> jsonData = [];
+        if (decoded is List) {
+          jsonData = decoded;
+        } else if (decoded is Map && decoded['data'] is List) {
+          jsonData = decoded['data'];
+        }
         return jsonData.map((e) => Calls.fromJson(e)).toList();
       } else {
         throw Exception("Failed to load filtered calls");

@@ -24,6 +24,7 @@ const Lead = sequelize.define(
     number: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     email: {
       type: DataTypes.TEXT,
@@ -33,13 +34,9 @@ const Lead = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    dob :{
-      type: DataTypes.DATEONLY
-    },
-    branch: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
+    // dob :{
+    //   type: DataTypes.DATEONLY
+    // },
     source: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -59,9 +56,9 @@ const Lead = sequelize.define(
     employment_type: {
       type: DataTypes.STRING,
     },
-    loan_term: {
-      type: DataTypes.STRING
-    },
+    // loan_term: {
+    //   type: DataTypes.STRING
+    // },
     refrence: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -86,9 +83,9 @@ const Lead = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    salary:{
-      type: DataTypes.STRING,
-    }
+    // salary:{
+    //   type: DataTypes.STRING,
+    // }
   },
   {
     tableName: "leads",
@@ -102,7 +99,7 @@ Lead.belongsTo(LeadStatus, {
 });
 
 // Create table if not exists
-Lead.sync({ alter: false })
+Lead.sync({ alter: true })
   .then(() => {
     console.log("Lead table created");
   })

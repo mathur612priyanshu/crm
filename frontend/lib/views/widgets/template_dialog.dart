@@ -239,7 +239,7 @@ Future<void> sendImageWithMessageToWhatsApp(
   String message,
 ) async {
   const platform = MethodChannel(
-    'com.example.capital_care/whatsapp_share',
+    'com.trustingbrains.callingcrm/whatsapp_share',
   ); // ✅ channel name match
 
   try {

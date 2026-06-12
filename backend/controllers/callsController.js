@@ -194,9 +194,26 @@ exports.getTotalCallsCountByEmployeeId = async (req, res) => {
       where: { emp_id }
     });
 
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const todayCount = await Calls.count({
+      where: {
+        emp_id,
+        createdAt: {
+          [Op.between]: [startOfToday, endOfToday]
+        }
+      }
+    });
+
     res.status(200).json({
       success: true,
+      total: totalCount,
       totalCount,
+      today: todayCount,
       emp_id
     });
   } catch (error) {

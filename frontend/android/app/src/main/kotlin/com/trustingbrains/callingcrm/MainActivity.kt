@@ -1,4 +1,4 @@
-package com.example.capital_care
+package com.trustingbrains.callingcrm
 
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +11,7 @@ import java.io.FileOutputStream
 import java.net.URL
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.capital_care/whatsapp_share" // ✅ Match with Flutter side
+    private val CHANNEL = "com.trustingbrains.callingcrm/whatsapp_share" // ✅ Match with Flutter side
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

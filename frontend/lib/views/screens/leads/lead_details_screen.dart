@@ -253,7 +253,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                                           contactName: widget.lead.name ?? '',
                                           contactNumber:
                                               widget.lead.number ?? '',
-                                          // email: widget.lead.email ?? '',
+                                          email: widget.lead.email ?? '',
                                           source: widget.lead.source ?? '',
                                           priority: widget.lead.priority ?? '',
                                           status: widget.lead.status ?? '',
@@ -270,6 +270,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                                           // loanTerm: widget.lead.loan_term ?? '',
                                           employmentType:
                                               widget.lead.employment_type ?? '',
+                                          // salary: widget.lead.salary ?? '',
                                         ),
                                   ),
                                 );
@@ -348,7 +349,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                         //   Colors.pink,
                         //   "DOB: ${widget.lead.dob ?? '-'}",
                         // ),
-                        const SizedBox(height: 8),
+                        // const SizedBox(height: 8),
 
                         /// Loan Type
                         _buildIconRow(
@@ -376,11 +377,11 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
                         ),
 
                         /// salary
-                        _buildIconRow(
-                          Icons.money,
-                          Colors.lightGreen,
-                          "Salary: ${widget.lead.salary ?? '-'}",
-                        ),
+                        // _buildIconRow(
+                        //   Icons.money,
+                        //   Colors.lightGreen,
+                        //   "Salary: ${widget.lead.salary ?? '-'}",
+                        // ),
                       ],
                     ),
                   ),

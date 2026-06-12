@@ -18,17 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController userNameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   void loginUser(String userName, String password) async {
     if (userName.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           backgroundColor: Colors.red,
           content: Text('Employee ID and Password are required'),
         ),
       );
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final user = await ApiService.login(userName, password);
 
@@ -41,26 +47,30 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         listen: false,
       ).fetchTotalCalls();
-      // await Provider.of<CallsProvider>(
-      //   context,
-      //   listen: false,
-      // ).fetchTodayCalls();
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Welcome ${user.ename}!')));
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => DashboardScreen()),
+        MaterialPageRoute(builder: (context) =>  DashboardScreen()),
       );
-      // write login submission code here
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Something went wrong'),
-        ),
-      );
+      print("Login error: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Something went wrong'),
+          ),
+        );
+      }
     }
   }
 
@@ -124,15 +134,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 30),
-                          CustomButton(
-                            text: "Login",
-                            onPressed: () {
-                              String username = userNameController.text.trim();
-                              String password = passwordController.text.trim();
-                              loginUser(username, password);
-                            },
-                            color: Colors.green,
-                          ),
+                          _isLoading
+                              ? const CircularProgressIndicator(color: Colors.green)
+                              : CustomButton(
+                                  text: "Login",
+                                  onPressed: () {
+                                    String username = userNameController.text.trim();
+                                    String password = passwordController.text.trim();
+                                    loginUser(username, password);
+                                  },
+                                  color: Colors.green,
+                                ),
                         ],
                       ),
                     ),

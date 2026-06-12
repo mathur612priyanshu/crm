@@ -31,6 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
       );
+      return;
     }
     final lgTime = DateTime.parse(loginTime!);
     final now = DateTime.now();

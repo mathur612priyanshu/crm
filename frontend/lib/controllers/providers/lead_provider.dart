@@ -162,7 +162,7 @@ class LeadProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateLead(Leads updatedLead, int leadId) async {
+  Future<bool> updateLead(Leads updatedLead, int leadId) async {
     // print("==============================> updateleadCalled");
     try {
       bool success = await ApiService.updateLead(leadId, updatedLead);
@@ -180,7 +180,6 @@ class LeadProvider with ChangeNotifier {
             email: updatedLead.email ?? oldLead.email,
             // dob: updatedLead.dob ?? oldLead.dob,
             owner: updatedLead.owner ?? oldLead.owner,
-            // branch: updatedLead.branch ?? oldLead.branch,
             source: updatedLead.source ?? oldLead.source,
             priority: updatedLead.priority ?? oldLead.priority,
             status: updatedLead.status ?? oldLead.status,
@@ -263,9 +262,12 @@ class LeadProvider with ChangeNotifier {
           // print("=====================================> lead updated");
           notifyListeners();
         }
+        return true;
       }
+      return false;
     } catch (e) {
       print("Error updating lead: $e");
+      return false;
     }
   }
 

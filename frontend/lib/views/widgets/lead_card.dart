@@ -238,15 +238,15 @@ class _LeadCardState extends State<LeadCard> {
                       ],
                     ),
                     // Icon(Icons.forum),
-                    Row(
-                      children: [
-                        const Icon(Icons.money_rounded),
-                        const SizedBox(width: 5),
-                        Text(
-                          "${widget.lead.salary != null && widget.lead.salary != "" ? widget.lead.salary : ""}",
-                        ),
-                      ],
-                    ),
+                    // Row(
+                    //   children: [
+                    //     const Icon(Icons.money_rounded),
+                    //     const SizedBox(width: 5),
+                    //     Text(
+                    //       "${widget.lead.salary != null && widget.lead.salary != "" ? widget.lead.salary : ""}",
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
               ],

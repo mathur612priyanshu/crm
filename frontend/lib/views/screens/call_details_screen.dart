@@ -4,6 +4,7 @@ import 'package:capital_care/controllers/providers/calls_provider.dart';
 import 'package:capital_care/controllers/providers/history_provider.dart';
 import 'package:capital_care/controllers/providers/lead_provider.dart';
 import 'package:capital_care/controllers/providers/userprovider.dart';
+import 'package:capital_care/controllers/providers/status_provider.dart';
 import 'package:capital_care/models/calls_model.dart';
 import 'package:capital_care/models/employee_model.dart';
 import 'package:capital_care/models/history_model.dart';
@@ -26,6 +27,7 @@ class CallDetailsScreen extends StatefulWidget {
 }
 
 class _CallDetailsScreenState extends State<CallDetailsScreen> {
+  bool isSubmitting = false;
   String? feedbackStatus;
 
   String? priority;
@@ -44,6 +46,10 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
   final TextEditingController descriptionController = TextEditingController();
 
   void handleSubmission() async {
+    if (isSubmitting) return;
+    setState(() {
+      isSubmitting = true;
+    });
     updateCall();
     if (feedbackStatus == null) {
       feedbackStatus = widget.lead.status;
@@ -61,9 +67,6 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
     if (budgetController.text.isEmpty) {
       budgetController.text = widget.lead.est_budget;
     }
-    if (remarkController.text.isEmpty) {
-      remarkController.text = widget.lead.remark;
-    }
 
     Leads updateLead = Leads(
       status: feedbackStatus!,
@@ -71,7 +74,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       priority: priority!,
       next_meeting: nextMeetingController.text,
       est_budget: budgetController.text,
-      remark: remarkController.text,
+      remark: remarkController.text.trim().isNotEmpty ? remarkController.text : null,
     );
 
     History newHistory = History(
@@ -82,25 +85,44 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       loanType: loanType,
       remark: remarkController.text,
     );
-    Provider.of<LeadProvider>(
-      context,
-      listen: false,
-    ).updateLead(updateLead, widget.lead.lead_id);
-    // bool success1 = await ApiService.updateLead(
-    //   widget.lead.lead_id,
-    //   updateLead,
-    // );
-    // bool success2 = await ApiService.addHistory(newHistory);
-    Provider.of<HistoryProvider>(context, listen: false).addHistory(newHistory);
-    // Provider.of<LeadProvider>(context, listen: false).addLead();
+    try {
+      bool success = await Provider.of<LeadProvider>(
+        context,
+        listen: false,
+      ).updateLead(updateLead, widget.lead.lead_id);
 
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(content: Text(success1 && success2 ? "success" : "Error")),
-    // );
-    // if (success1 && success2) {
-    //   Navigator.pop(context);
-    // }
-    Navigator.pop(context);
+      if (success) {
+        Provider.of<HistoryProvider>(context, listen: false).addHistory(newHistory);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Call details submitted successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to submit call details. Please try again."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          isSubmitting = false;
+        });
+      }
+    } catch (e) {
+      print("Error submitting call details: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        isSubmitting = false;
+      });
+    }
   }
 
   void updateCall() async {
@@ -135,41 +157,76 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
   }
 
   void addLeadSubmission() async {
+    if (isSubmitting) return;
+    setState(() {
+      isSubmitting = true;
+    });
+
     int idOfLead;
     // updateCall();
     if (contactNameController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("fill contact name")));
+      setState(() {
+        isSubmitting = false;
+      });
       return;
     }
-    final user = Provider.of<UserProvider>(context, listen: false).user;
-    Leads newLead = Leads(
-      name: contactNameController.text,
-      number: widget.number,
-      person_id: user?.empId,
-      owner: user?.ename,
-      source: source,
-      description: descriptionController.text,
-      status: feedbackStatus,
-      next_meeting: nextMeetingController.text,
-      remark: remarkController.text,
-      est_budget: budgetController.text,
-      loanType: loanType,
-      priority: priority,
-    );
-    // bool success = await ApiService.addLead(newLead);
-    int newLeadId = await Provider.of<LeadProvider>(
-      context,
-      listen: false,
-    ).addLead(newLead);
-    idOfLead = newLeadId;
-    updateHistory(user?.ename, user?.empId, idOfLead);
-    // ScaffoldMessenger.of(
-    //   context,
-    // ).showSnackBar(SnackBar(content: Text(success ? "Success" : "error")));
-    Navigator.pop(context);
-    // if (success) Navigator.pop(context);
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      Leads newLead = Leads(
+        name: contactNameController.text,
+        number: widget.number,
+        person_id: user?.empId,
+        owner: user?.ename,
+        source: source,
+        description: descriptionController.text,
+        status: feedbackStatus,
+        next_meeting: nextMeetingController.text,
+        remark: remarkController.text,
+        est_budget: budgetController.text,
+        loanType: loanType,
+        priority: priority,
+      );
+      // bool success = await ApiService.addLead(newLead);
+      int newLeadId = await Provider.of<LeadProvider>(
+        context,
+        listen: false,
+      ).addLead(newLead);
+      idOfLead = newLeadId;
+      if (idOfLead != -1) {
+        updateHistory(user?.ename, user?.empId, idOfLead);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("New lead added successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to add new lead. Please try again."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          isSubmitting = false;
+        });
+      }
+    } catch (e) {
+      print("Error submitting new lead: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        isSubmitting = false;
+      });
+    }
   }
 
   void updateHistory(ename, emp_id, idOfLead) async {
@@ -199,12 +256,32 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final role = user?.role;
+      String? team;
+      if (role == 'calling' || role == 'operations') {
+        team = role;
+      }
+      Provider.of<StatusProvider>(context, listen: false).fetchStatuses(team: team);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final statusProvider = Provider.of<StatusProvider>(context);
+    final statusList = statusProvider.statusNames;
+    final dropdownItems = List<String>.from(statusList);
+    if (feedbackStatus != null && !dropdownItems.contains(feedbackStatus)) {
+      dropdownItems.add(feedbackStatus!);
+    }
+    if (widget.lead != null && widget.lead.status != null && widget.lead.status.toString().isNotEmpty) {
+      if (!dropdownItems.contains(widget.lead.status.toString())) {
+        dropdownItems.add(widget.lead.status.toString());
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -264,19 +341,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                 buildDropdown(
                   value: feedbackStatus,
                   hint: 'Select Feedback Status',
-                  items: [
-                    "Interested",
-                    "Call Back",
-                    "No Requirement",
-                    "Follow up",
-                    "Document Rejected",
-                    "Document Pending",
-                    "Not Pick",
-                    "Not Connected",
-                    "File Login",
-                    "Loan Section",
-                    "Loan Disbursement",
-                  ],
+                  items: dropdownItems,
                   onChanged: (val) => setState(() => feedbackStatus = val!),
                 ),
 
@@ -318,7 +383,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                   onChanged: (val) => setState(() => priority = val!),
                 ),
 
-                GestureDetector(
+                 GestureDetector(
                   onTap: () async {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
@@ -336,7 +401,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                   child: AbsorbPointer(
                     child: TextFormField(
                       controller: nextMeetingController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Select Next Meeting Date',
                         border: OutlineInputBorder(),
                       ),
@@ -417,14 +482,16 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
 
                 /// Submit Button
                 CustomButton(
-                  text: "SUBMIT",
-                  onPressed: () {
-                    if (widget.lead == null) {
-                      addLeadSubmission();
-                    } else {
-                      handleSubmission();
-                    }
-                  },
+                  text: isSubmitting ? "SUBMITTING..." : "SUBMIT",
+                  onPressed: isSubmitting
+                      ? null
+                      : () {
+                          if (widget.lead == null) {
+                            addLeadSubmission();
+                          } else {
+                            handleSubmission();
+                          }
+                        },
                 ),
 
                 const SizedBox(height: 20),

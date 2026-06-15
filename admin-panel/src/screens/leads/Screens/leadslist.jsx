@@ -18,6 +18,8 @@ const LeadsList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
   // const [fromDate, setFromDate] = useState("");
   // const [toDate, setToDate] = useState("");
   const itemsPerPage = 20;
@@ -411,7 +413,10 @@ const LeadsList = () => {
                     </svg>
                   </button> */}
                   <button
-                    onClick={() => handleDeleteUser(user.lead_id)}
+                    onClick={() => {
+                      setSelectedLead(user);
+                      setShowDeleteModal(true);
+                    }}
                     className="mr-4"
                     title="Delete"
                   >
@@ -473,6 +478,39 @@ const LeadsList = () => {
           Next
         </button>
       </div>
+
+      {/* delete Confirmation Modal */}
+      {showDeleteModal && selectedLead && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 animate-fadeIn">
+          <div className="bg-white p-6 rounded shadow-md w-80">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h2>
+            <p className="mb-4 text-gray-600">
+              Are you sure you want to delete lead <strong>{selectedLead.name}</strong> (ID: {selectedLead.lead_id})?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedLead(null);
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteUser(selectedLead.lead_id);
+                  setShowDeleteModal(false);
+                  setSelectedLead(null);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

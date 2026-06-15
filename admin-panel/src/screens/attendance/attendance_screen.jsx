@@ -29,7 +29,7 @@ const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
     ],
   ];
 
-  currentRecords.forEach((emp) => {
+  processedData.forEach((emp) => {
     const row = [
       emp.userId,
       emp.name,

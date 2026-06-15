@@ -61,31 +61,38 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
       priority = (widget.lead.priority == null || widget.lead.priority.toString().isEmpty) ? null : widget.lead.priority;
     }
 
-    if (nextMeetingController.text.isEmpty) {
-      nextMeetingController.text = widget.lead.next_meeting;
-    }
-    if (budgetController.text.isEmpty) {
-      budgetController.text = widget.lead.est_budget;
+    if (feedbackStatus == null || priority == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Feedback Status and Priority are required *"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        isSubmitting = false;
+      });
+      return;
     }
 
-    Leads updateLead = Leads(
-      status: feedbackStatus!,
-      loanType: loanType,
-      priority: priority!,
-      next_meeting: nextMeetingController.text,
-      est_budget: budgetController.text,
-      remark: remarkController.text,
-    );
-
-    History newHistory = History(
-      lead_id: widget.lead.lead_id,
-      owner: widget.lead.owner,
-      next_meeting: nextMeetingController.text,
-      status: feedbackStatus,
-      loanType: loanType,
-      remark: remarkController.text,
-    );
     try {
+      Leads updateLead = Leads(
+        status: feedbackStatus!,
+        loanType: loanType,
+        priority: priority!,
+        next_meeting: nextMeetingController.text,
+        est_budget: budgetController.text,
+        remark: remarkController.text,
+      );
+
+      History newHistory = History(
+        lead_id: widget.lead.lead_id,
+        owner: widget.lead.owner,
+        next_meeting: nextMeetingController.text,
+        status: feedbackStatus,
+        loanType: loanType,
+        remark: remarkController.text,
+      );
+
       bool success = await Provider.of<LeadProvider>(
         context,
         listen: false,
@@ -257,6 +264,15 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    nextMeetingController.text = (widget.lead != null && widget.lead.next_meeting != null)
+        ? widget.lead.next_meeting.toString()
+        : "";
+    budgetController.text = (widget.lead != null && widget.lead.est_budget != null)
+        ? widget.lead.est_budget.toString()
+        : "";
+    remarkController.text = (widget.lead != null && widget.lead.remark != null)
+        ? widget.lead.remark.toString()
+        : "";
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = Provider.of<UserProvider>(context, listen: false).user;
       final role = user?.role;
@@ -372,7 +388,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                 /// Feedback Status Dropdown
                 buildDropdown(
                   value: feedbackStatus,
-                  hint: 'Select Feedback Status',
+                  hint: widget.lead != null ? 'Select Feedback Status *' : 'Select Feedback Status',
                   items: dropdownItems,
                   onChanged: (val) => setState(() => feedbackStatus = val!),
                 ),
@@ -391,12 +407,14 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                 /// Priority Dropdown
                 buildDropdown(
                   value: priority,
-                  hint: 'Select Priority',
+                  hint: widget.lead != null ? 'Select Priority *' : 'Select Priority',
                   items: priorityItems,
                   onChanged: (val) => setState(() => priority = val!),
                 ),
 
-                 GestureDetector(
+                 TextFormField(
+                  controller: nextMeetingController,
+                  readOnly: true,
                   onTap: () async {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
@@ -405,20 +423,38 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                       lastDate: DateTime(DateTime.now().year + 1),
                     );
                     if (pickedDate != null) {
-                      nextMeetingController.text =
-                          pickedDate.toLocal().toString().split(
-                            ' ',
-                          )[0]; // or use DateFormat
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (pickedTime != null) {
+                        // Combine date and time into one DateTime
+                        DateTime finalDateTime = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                        setState(() {
+                          nextMeetingController.text = finalDateTime.toString();
+                        });
+                      }
                     }
                   },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: nextMeetingController,
-                      decoration: const InputDecoration(
-                        hintText: 'Select Next Meeting Date',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
+                  decoration: InputDecoration(
+                    hintText: 'Select Next Meeting Date',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: nextMeetingController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                nextMeetingController.clear();
+                              });
+                            },
+                          )
+                        : null,
                   ),
                 ),
 
@@ -465,7 +501,7 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                         SizedBox(height: 10),
                         buildTextField(
                           controller: contactNameController,
-                          hint: "Contact Name",
+                          hint: "Contact Name *",
                         ),
                         buildDropdown(
                           value: source,

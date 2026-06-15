@@ -132,6 +132,15 @@ const addLeadHistory = async ({ lead, previousStatusId, actor, remark }) => {
 };
 
 exports.addLead = async (req, res) => {
+  // Convert empty strings to null
+  if (req.body) {
+    for (const key in req.body) {
+      if (req.body[key] === "") {
+        req.body[key] = null;
+      }
+    }
+  }
+
   const { name, number } = req.body;
 
   if (!name || !number) {
@@ -226,7 +235,7 @@ exports.importLeadsFromExcel = async (req, res) => {
           number,
           email,
           // dob: dobDate,
-          source,
+          source: source || 'Bulk excel',
           priority,
           next_meeting: meetingDate,
           employment_type,
@@ -284,6 +293,15 @@ exports.importLeadsFromExcel = async (req, res) => {
 
 exports.updateLead = async (req, res) => {
     const { id } = req.params;
+
+    // Convert empty strings to null
+    if (req.body) {
+        for (const key in req.body) {
+            if (req.body[key] === "") {
+                req.body[key] = null;
+            }
+        }
+    }
     const updateData = { ...req.body };  // Accept any fields from the request body
 
     if (!id) {

@@ -353,13 +353,13 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               const SectionTitle(title: "Contact Details"),
               const SizedBox(height: 8),
               CustomTextField(
-                hint: "Contact Name",
+                hint: "Contact Name *",
                 controller: contactNameController,
                 maxLine: 1,
               ),
               SizedBox(height: 12),
               CustomTextField(
-                hint: "Contact Number",
+                hint: "Contact Number *",
                 controller: contactNumberController,
                 keyboardType: TextInputType.phone,
                 maxLine: 1,
@@ -410,48 +410,55 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               ),
               const SizedBox(height: 12),
 
-              if (statusController.text != "No Requirement")
-                GestureDetector(
-                  onTap: () async {
-                    DateTime? pickedDate = await showDatePicker(
+              TextFormField(
+                controller: nextMeetingTimeController,
+                readOnly: true,
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2050),
+                  );
+
+                  if (pickedDate != null) {
+                    TimeOfDay? pickedTime = await showTimePicker(
                       context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(2050),
+                      initialTime: TimeOfDay.now(),
                     );
 
-                    if (pickedDate != null) {
-                      TimeOfDay? pickedTime = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.now(),
+                    if (pickedTime != null) {
+                      // Combine date and time into one DateTime
+                      DateTime finalDateTime = DateTime(
+                        pickedDate.year,
+                        pickedDate.month,
+                        pickedDate.day,
+                        pickedTime.hour,
+                        pickedTime.minute,
                       );
 
-                      if (pickedTime != null) {
-                        // Combine date and time into one DateTime
-                        DateTime finalDateTime = DateTime(
-                          pickedDate.year,
-                          pickedDate.month,
-                          pickedDate.day,
-                          pickedTime.hour,
-                          pickedTime.minute,
-                        );
-
+                      setState(() {
                         nextMeetingTimeController.text = finalDateTime.toString();
-                      }
+                      });
                     }
-                  },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: nextMeetingTimeController,
-                      decoration: const InputDecoration(
-                        hintText: 'Select Next Meeting Date *',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: 'Select Next Meeting Date',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: nextMeetingTimeController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              nextMeetingTimeController.clear();
+                            });
+                          },
+                        )
+                      : null,
                 ),
-              if (statusController.text != "No Requirement")
-                SizedBox(height: 12),
+              ),
+              const SizedBox(height: 12),
 
               const SizedBox(height: 12),
               CustomTextField(hint: "Remark", controller: remarkController),

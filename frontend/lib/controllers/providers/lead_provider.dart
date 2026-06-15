@@ -215,37 +215,42 @@ class LeadProvider with ChangeNotifier {
           final today = DateTime(now.year, now.month, now.day);
           final tomorrow = today.add(Duration(days: 1));
 
-          // Helper to get date-only value
-          DateTime toDateOnly(dynamic val) {
-            if (val is String) {
-              final dt = DateTime.parse(val);
-              return DateTime(dt.year, dt.month, dt.day);
-            } else if (val is DateTime) {
-              return DateTime(val.year, val.month, val.day);
-            } else {
-              throw Exception("Invalid date format");
+          // Helper to get date-only value (returns null if invalid/empty)
+          DateTime? toDateOnly(dynamic val) {
+            if (val == null) return null;
+            final str = val.toString().trim();
+            if (str.isEmpty || str.toLowerCase() == 'null') return null;
+            try {
+              if (val is String) {
+                final dt = DateTime.parse(str);
+                return DateTime(dt.year, dt.month, dt.day);
+              } else if (val is DateTime) {
+                return DateTime(val.year, val.month, val.day);
+              }
+            } catch (e) {
+              print("toDateOnly parsing error: $e");
+            }
+            return null;
+          }
+
+          final oldLeadNextMeetingDate = toDateOnly(oldLead.next_meeting);
+          final updatedNextMeetingDate = toDateOnly(mergedLead.next_meeting);
+
+          if (oldLeadNextMeetingDate != null) {
+            if (oldLeadNextMeetingDate == today) {
+              _todayLeads.removeWhere(
+                (lead) => lead.lead_id == oldLead.lead_id,
+              );
+            }
+
+            if (oldLeadNextMeetingDate == tomorrow) {
+              _tomorrowLeads.removeWhere(
+                (lead) => lead.lead_id == oldLead.lead_id,
+              );
             }
           }
 
-          if (updatedLead.next_meeting != null) {
-            final updatedNextMeetingDate = toDateOnly(updatedLead.next_meeting);
-
-            if (oldLead.next_meeting != null) {
-              final oldLeadNextMeetingDate = toDateOnly(oldLead.next_meeting);
-
-              if (oldLeadNextMeetingDate == today) {
-                _todayLeads.removeWhere(
-                  (lead) => lead.lead_id == oldLead.lead_id,
-                );
-              }
-
-              if (oldLeadNextMeetingDate == tomorrow) {
-                _tomorrowLeads.removeWhere(
-                  (lead) => lead.lead_id == oldLead.lead_id,
-                );
-              }
-            }
-
+          if (updatedNextMeetingDate != null) {
             if (updatedNextMeetingDate == today) {
               _todayLeads.removeWhere(
                 (lead) => lead.lead_id == mergedLead.lead_id,

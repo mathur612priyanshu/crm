@@ -1,5 +1,6 @@
 import 'package:capital_care/controllers/providers/calls_provider.dart';
 import 'package:capital_care/controllers/providers/lead_provider.dart';
+import 'package:capital_care/controllers/providers/status_provider.dart';
 import 'package:capital_care/models/leads_model.dart';
 import 'package:capital_care/services/api_service.dart';
 import 'package:capital_care/theme/appcolors.dart';
@@ -56,8 +57,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
+    super.initState();
     getLeadsForGraph();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<StatusProvider>(context, listen: false).fetchStatuses();
+    });
   }
 
   Future<void> getLeadsForGraph() async {

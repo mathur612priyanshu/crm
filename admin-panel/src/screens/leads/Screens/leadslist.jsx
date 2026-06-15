@@ -124,30 +124,103 @@ const LeadsList = () => {
     }
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     if (users.length === 0) {
       toast.info("No leads available to download");
       return;
     }
 
-    // Create an array of rows
-    const excelData = users.map((user) => {
-      return {
-        "Lead ID": user.lead_id,
-        "Name": user.name || "N/A",
-        "Phone No.": user.number || "N/A",
-        "Status": user.status || "--",
-        "Assigned To": user.owner || "Unassigned",
-      };
-    });
+    const loadToast = toast.loading("Preparing Excel download... Please wait.");
+    try {
+      const response = await axios.get(`${API_URL}/getLeadsForAdminPanel`, {
+        params: {
+          page: 1,
+          limit: 1000000,
+          search: searchTerm || "",
+          fromDate: fromDate || "",
+          toDate: toDate || "",
+        },
+      });
 
-    // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+      if (response.status === 200) {
+        const allLeads = response.data?.data || [];
+        if (allLeads.length === 0) {
+          toast.update(loadToast, {
+            render: "No leads found matching current filters.",
+            type: "info",
+            isLoading: false,
+            autoClose: 3000,
+          });
+          return;
+        }
 
-    // Trigger download
-    XLSX.writeFile(workbook, "Leads_Report.xlsx");
+        const excelData = allLeads.map((user) => {
+          return {
+            "Lead ID": user.lead_id,
+            "Name": user.name || "N/A",
+            "Phone No.": user.number || "N/A",
+            "Email": user.email || "N/A",
+            "Status": user.status || "--",
+            "Assigned To ID": user.person_id || "Unassigned",
+            "Assigned To Name": user.owner || "Unassigned",
+            "Source": user.source || "N/A",
+            "Priority": user.priority || "N/A",
+            "Next Meeting": user.next_meeting
+              ? new Date(user.next_meeting).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })
+              : "N/A",
+            "Loan Type": user.loan_type || "N/A",
+            "Estimated Budget": user.est_budget || "N/A",
+            "Reference": user.refrence || "N/A",
+            "Address": user.address || "N/A",
+            "Description": user.description || "N/A",
+            "Remark": user.remark || "N/A",
+            "Created At": user.createdAt
+              ? new Date(user.createdAt).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })
+              : "N/A",
+            "Updated At": user.updatedAt
+              ? new Date(user.updatedAt).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })
+              : "N/A",
+          };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+
+        XLSX.writeFile(workbook, "Leads_Report.xlsx");
+
+        toast.update(loadToast, {
+          render: `Successfully downloaded ${allLeads.length} leads!`,
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+        });
+      } else {
+        toast.update(loadToast, {
+          render: "Failed to download leads. Please try again.",
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading excel:", error);
+      toast.update(loadToast, {
+        render: "An error occurred while downloading Excel.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    }
   };
 
 

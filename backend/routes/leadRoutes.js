@@ -25,5 +25,7 @@ router.get('/getLeadByNumber/:lead_number', leadController.getLeadByNumber);
 router.get('/getLeadsForAdminPanel', leadController.getLeadsForAdminPanel);
 router.get('/getFollowupsCount', leadController.getLeadsByNextMeeting);
 router.get('/getFilteredLeads', leadController.getFilteredLeads);
+router.get('/dashboardStats', leadController.getDashboardStats);
+router.get('/getFollowups', leadController.getFollowupsPaginated);
 
 module.exports = router;

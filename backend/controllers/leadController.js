@@ -6,6 +6,7 @@ const LeadStatus = require("../models/leadStatusModel");
 const History = require("../models/historyModel");
 const { startOfToday, endOfToday, startOfTomorrow, endOfTomorrow } = require('date-fns');
 const { EMPLOYEE_ROLES } = require("../constants/employeeRoles");
+const Calls = require("../models/callsModel");
 
 const MAX_SELF_ASSIGN_LEADS = 50;
 
@@ -621,37 +622,44 @@ exports.searchByName = async (req, res)=>{
 
 exports.leadsByDate = async (req, res) => {
   const { startDate, endDate } = req.query;
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
-  const offset = (page - 1) * limit;
+  const page = req.query.page ? parseInt(req.query.page) : null;
+  const limit = req.query.limit ? parseInt(req.query.limit) : null;
+  const offset = (page && limit) ? (page - 1) * limit : null;
 
   if (!startDate || !endDate) {
     return res.status(400).json({ message: 'Start date and end date are required' });
   }
 
   try {
-    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
+    const queryOptions = {
       where: {
         createdAt: {
           [Op.between]: [new Date(startDate), new Date(endDate)]
         }
       },
       include: [leadStatusInclude],
-      limit,
-      offset,
       order: [['createdAt', 'DESC']]
-    });
+    };
+
+    if (limit !== null) {
+      queryOptions.limit = limit;
+    }
+    if (offset !== null) {
+      queryOptions.offset = offset;
+    }
+
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll(queryOptions);
 
     res.status(200).json({
       success: true,
       data: serializeLeads(leads),
       pagination: {
         totalItems: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        currentPage: page,
-        itemsPerPage: limit,
-        hasNextPage: page < Math.ceil(totalCount / limit),
-        hasPreviousPage: page > 1,
+        totalPages: limit ? Math.ceil(totalCount / limit) : 1,
+        currentPage: page || 1,
+        itemsPerPage: limit || totalCount,
+        hasNextPage: limit ? (page < Math.ceil(totalCount / limit)) : false,
+        hasPreviousPage: page ? (page > 1) : false,
       },
     });
   } catch (error) {
@@ -952,8 +960,8 @@ exports.getLeadsByNextMeeting = async (req, res) => {
     const tomorrowStart = startOfTomorrow();
     const tomorrowEnd = endOfTomorrow();
 
-    // Today's follow-ups
-    const todayFollowups = await Lead.findAll({
+    // Today's follow-ups count
+    const todayFollowupsCount = await Lead.count({
       where: {
         next_meeting: {
           [Op.between]: [todayStart, todayEnd],
@@ -961,8 +969,8 @@ exports.getLeadsByNextMeeting = async (req, res) => {
       },
     });
 
-    // Tomorrow's follow-ups
-    const tomorrowFollowups = await Lead.findAll({
+    // Tomorrow's follow-ups count
+    const tomorrowFollowupsCount = await Lead.count({
       where: {
         next_meeting: {
           [Op.between]: [tomorrowStart, tomorrowEnd],
@@ -970,8 +978,8 @@ exports.getLeadsByNextMeeting = async (req, res) => {
       },
     });
 
-    // Pending follow-ups (next meeting after tomorrow)
-    const pendingFollowups = await Lead.findAll({
+    // Pending follow-ups count (next meeting after tomorrow)
+    const pendingFollowupsCount = await Lead.count({
       where: {
         next_meeting: {
           [Op.gt]: tomorrowEnd,
@@ -982,9 +990,9 @@ exports.getLeadsByNextMeeting = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        todayFollowups,
-        tomorrowFollowups,
-        pendingFollowups,
+        todayFollowups: { length: todayFollowupsCount },
+        tomorrowFollowups: { length: tomorrowFollowupsCount },
+        pendingFollowups: { length: pendingFollowupsCount },
       },
     });
   } catch (error) {
@@ -1041,5 +1049,202 @@ exports.getFilteredLeads = async (req, res) => {
   } catch (error) {
     console.error("Error fetching filtered leads", error);
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+exports.getDashboardStats = async (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ message: "startDate and endDate are required" });
+  }
+
+  try {
+    const dateRange = {
+      [Op.between]: [new Date(startDate), new Date(endDate)]
+    };
+
+    // 1. Total Counts
+    const totalLeads = await Lead.count({ where: { createdAt: dateRange } });
+    const totalCalls = await Calls.count({ where: { createdAt: dateRange } });
+
+    // 2. Followup counts
+    const todayStart = startOfToday();
+    const todayEnd = endOfToday();
+    const tomorrowStart = startOfTomorrow();
+    const tomorrowEnd = endOfTomorrow();
+
+    const todayFollowups = await Lead.count({
+      where: { next_meeting: { [Op.between]: [todayStart, todayEnd] } }
+    });
+    const tomorrowFollowups = await Lead.count({
+      where: { next_meeting: { [Op.between]: [tomorrowStart, tomorrowEnd] } }
+    });
+    const pendingFollowups = await Lead.count({
+      where: { next_meeting: { [Op.gt]: tomorrowEnd } }
+    });
+
+    // 3. Status Counts
+    const statuses = await LeadStatus.findAll({ where: { is_active: true } });
+    
+    // Group leads by status_id
+    const statusCountsRaw = await Lead.findAll({
+      attributes: ['status_id', [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']],
+      where: { createdAt: dateRange },
+      group: ['status_id']
+    });
+
+    const statusCountsMap = {};
+    statusCountsRaw.forEach(row => {
+      statusCountsMap[row.status_id] = parseInt(row.get('count')) || 0;
+    });
+
+    const leadStatusCounts = {};
+    statuses.forEach(status => {
+      leadStatusCounts[status.name] = statusCountsMap[status.status_id] || 0;
+    });
+
+    // 4. Loan Type Counts
+    const loanCountsRaw = await Lead.findAll({
+      attributes: ['loan_type', [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']],
+      where: { createdAt: dateRange },
+      group: ['loan_type']
+    });
+
+    const loanTypeCounts = {
+      'Home Loan': 0,
+      'Mortgage Loan': 0,
+      'User Car Loan': 0,
+      'Business Loan': 0,
+      'Personal Loan': 0,
+      'DOD': 0,
+      'CC/OD': 0,
+      'CGTMSME': 0,
+      'Mutual Fund': 0,
+      'Insurance': 0,
+      'Other': 0
+    };
+
+    loanCountsRaw.forEach(row => {
+      const type = row.loan_type;
+      if (type !== undefined && type !== null) {
+        loanTypeCounts[type] = parseInt(row.get('count')) || 0;
+      }
+    });
+
+    // 5. Employee Performance Stats
+    const employees = await Employee.findAll({ where: { status: 'active' } });
+
+    const callsCountByEmpRaw = await Calls.findAll({
+      attributes: ['emp_id', [Calls.sequelize.fn('COUNT', Calls.sequelize.col('call_id')), 'count']],
+      where: { createdAt: dateRange },
+      group: ['emp_id']
+    });
+    const callsCountMap = {};
+    callsCountByEmpRaw.forEach(row => {
+      callsCountMap[row.emp_id] = parseInt(row.get('count')) || 0;
+    });
+
+    const leadsCountByEmpRaw = await Lead.findAll({
+      attributes: ['person_id', [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']],
+      where: { createdAt: dateRange },
+      group: ['person_id']
+    });
+    const leadsCountMap = {};
+    leadsCountByEmpRaw.forEach(row => {
+      leadsCountMap[row.person_id] = parseInt(row.get('count')) || 0;
+    });
+
+    // Find lead count per employee grouped by status_id
+    const leadsCountByEmpAndStatusRaw = await Lead.findAll({
+      attributes: ['person_id', 'status_id', [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']],
+      where: { createdAt: dateRange },
+      group: ['person_id', 'status_id']
+    });
+
+    const empStatusCountsMap = {};
+    leadsCountByEmpAndStatusRaw.forEach(row => {
+      empStatusCountsMap[`${row.person_id}_${row.status_id}`] = parseInt(row.get('count')) || 0;
+    });
+
+    const employeeStats = employees.map(emp => {
+      const activeStatusObj = statuses.length > 1 ? statuses[1] : (statuses.length > 0 ? statuses[0] : null);
+      const activeStatusId = activeStatusObj ? activeStatusObj.status_id : null;
+      const interestedCount = activeStatusId ? (empStatusCountsMap[`${emp.emp_id}_${activeStatusId}`] || 0) : 0;
+
+      return {
+        id: emp.emp_id,
+        name: emp.ename,
+        avatar: emp.ename
+          ?.split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase(),
+        totalCalls: callsCountMap[emp.emp_id] || 0,
+        totalLeads: leadsCountMap[emp.emp_id] || 0,
+        interestedLeads: interestedCount
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      counts: {
+        totalCalls,
+        totalLeads,
+        todayFollowups,
+        tomorrowFollowups,
+        pendingFollowups
+      },
+      leadStatusCounts,
+      loanTypeCounts,
+      employeeStats
+    });
+  } catch (error) {
+    console.error("Error generating dashboard stats:", error);
+    res.status(500).json({ message: "Database error", error: error.message });
+  }
+};
+
+exports.getFollowupsPaginated = async (req, res) => {
+  const { type } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  try {
+    let whereCondition = {};
+    if (type === 'today') {
+      whereCondition.next_meeting = { [Op.between]: [startOfToday(), endOfToday()] };
+    } else if (type === 'tomorrow') {
+      whereCondition.next_meeting = { [Op.between]: [startOfTomorrow(), endOfTomorrow()] };
+    } else if (type === 'pending') {
+      whereCondition.next_meeting = { [Op.gt]: endOfTomorrow() };
+    } else {
+      return res.status(400).json({ message: 'Invalid type parameter' });
+    }
+
+    const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
+      where: whereCondition,
+      include: [leadStatusInclude],
+      limit,
+      offset,
+      order: [['next_meeting', 'ASC']],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: serializeLeads(leads),
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error('Error in getFollowupsPaginated:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };

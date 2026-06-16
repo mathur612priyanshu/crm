@@ -103,36 +103,44 @@ exports.updateCall = async (req, res) => {
 
 exports.getCallsByDates = async (req, res) => {
   const { startDate, endDate } = req.query;
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
-  const offset = (page - 1) * limit;
+  const page = req.query.page ? parseInt(req.query.page) : null;
+  const limit = req.query.limit ? parseInt(req.query.limit) : null;
+  const offset = (page && limit) ? (page - 1) * limit : null;
 
   if (!startDate || !endDate) {
     return res.status(400).json({ message: "startDate and endDate are required" });
   }
 
   try {
-    const { rows: callsData, count: totalCount } = await Calls.findAndCountAll({
+    const queryOptions = {
       where: {
         createdAt: {
           [Op.between]: [new Date(startDate), new Date(endDate)]
         }
       },
-      limit,
-      offset,
       order: [['createdAt', 'DESC']],
-    });
+    };
+
+    if (limit !== null) {
+      queryOptions.limit = limit;
+    }
+    if (offset !== null) {
+      queryOptions.offset = offset;
+    }
+
+    const { rows: callsData, count: totalCount } = await Calls.findAndCountAll(queryOptions);
     
     res.status(200).json({
       success: true,
       data: callsData,
+      calls: callsData,
       pagination: {
         totalItems: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        currentPage: page,
-        itemsPerPage: limit,
-        hasNextPage: page < Math.ceil(totalCount / limit),
-        hasPreviousPage: page > 1,
+        totalPages: limit ? Math.ceil(totalCount / limit) : 1,
+        currentPage: page || 1,
+        itemsPerPage: limit || totalCount,
+        hasNextPage: limit ? (page < Math.ceil(totalCount / limit)) : false,
+        hasPreviousPage: page ? (page > 1) : false,
       }
     });
   } catch (error) {

@@ -10,10 +10,24 @@ const LeadDetailScreen = () => {
   const [lead, setLead] = useState(null);
   const [calls, setCalls] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [personNames] = useState({});
+  const [personNames, setPersonNames] = useState({});
   const [histories, setHistories] = useState([]);
   const [activeTab, setActiveTab] = useState("calls");
   const [loading, setLoading] = useState(true);
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/employees?limit=1000`);
+      const employeesList = response.data.employees || [];
+      const namesMap = {};
+      employeesList.forEach((emp) => {
+        namesMap[emp.emp_id] = emp.ename;
+      });
+      setPersonNames(namesMap);
+    } catch (error) {
+      console.error("Error fetching employees: ", error);
+    }
+  };
 
 const downloadexcel = () => {
   // Prepare calls data
@@ -151,7 +165,8 @@ const downloadexcel = () => {
           fetchLeadDetails(),
           fetchCallDetails(),
           fetchHistoryDetails(),
-          fetchTaskDetails()
+          fetchTaskDetails(),
+          fetchEmployees()
         ]);
       } catch (err) {
         console.error("Error loading lead details data:", err);
@@ -248,7 +263,7 @@ const downloadexcel = () => {
             <tbody>
               {calls.map((call, index) => (
                 <tr key={index} className="hover:bg-gray-50">
-                  <td className="border px-4 py-2">{lead?.owner || "N/A"}</td>
+                  <td className="border px-4 py-2">{personNames[call.emp_id] || call.emp_id || "N/A"}</td>
                   <td className="border px-4 py-2">{call.number}</td>
                   <td className="border px-4 py-2">{call.remark}</td>
                   <td className="border px-4 py-2">{new Date(call.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</td>

@@ -46,7 +46,7 @@ const downloadexcel = () => {
 
   // Prepare history data
   const historyData = histories.map((item) => {
-    const updatedBy = item.changedBy?.ename || item.changed_by_emp_id || item.owner || "N/A";
+    const updatedBy = item.changedBy?.ename || personNames[item.changed_by_emp_id] || item.changed_by_emp_id || "N/A";
     const statusName = item.statusDetails?.name || item.status || "N/A";
     const previousStatus = item.previousStatusDetails?.name || item.previous_status_id || "N/A";
 
@@ -293,7 +293,7 @@ const downloadexcel = () => {
               </thead>
               <tbody>
                 {histories.map((item, index) => {
-                  const updatedBy = item.changedBy?.ename || item.changed_by_emp_id || item.owner || "N/A";
+                  const updatedBy = item.changedBy?.ename || personNames[item.changed_by_emp_id] || item.changed_by_emp_id || "N/A";
                   const statusName = item.statusDetails?.name || item.status || "--";
                   const previousStatus = item.previousStatusDetails?.name || item.previous_status_id || "--";
                   return (

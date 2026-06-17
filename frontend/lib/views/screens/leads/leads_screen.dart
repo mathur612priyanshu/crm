@@ -23,6 +23,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
   String selectedStatusItem = "All";
   String searchQuery = "";
   bool showSearchBar = false;
+  final ScrollController _scrollController = ScrollController();
 
   DateTime today = DateTime.now();
   DateTime? startDate = DateTime.now().subtract(
@@ -50,17 +51,45 @@ class _LeadsScreenState extends State<LeadsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<LeadProvider>(
-        context,
-        listen: false,
-      ).fetchLeads(start: startDate, end: endDate);
+      _fetchLeads();
       
       Provider.of<StatusProvider>(
         context,
         listen: false,
       ).fetchStatuses();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final provider = Provider.of<LeadProvider>(context, listen: false);
+      if (provider.hasMore && !provider.isLoading) {
+        provider.fetchLeads(
+          loadMore: true,
+          search: searchQuery,
+          status: selectedStatusItem,
+          loanType: loanSelectedItem,
+        );
+      }
+    }
+  }
+
+  void _fetchLeads() {
+    Provider.of<LeadProvider>(context, listen: false).fetchLeads(
+      start: startDate,
+      end: endDate,
+      search: searchQuery,
+      status: selectedStatusItem,
+      loanType: loanSelectedItem,
+    );
   }
 
   @override
@@ -72,23 +101,6 @@ class _LeadsScreenState extends State<LeadsScreen> {
     final user = Provider.of<UserProvider>(context).user;
 
     final statusOptions = statusProvider.statusNamesWithAll;
-
-    final filteredLeads =
-      leads.where((lead) {
-          final matchesLoan =
-              loanSelectedItem == "All" || lead.loanType == loanSelectedItem;
-
-        final matchesStatus = selectedStatusItem == "All"
-          ? true
-          : lead.status == selectedStatusItem;
-
-          final matchesSearch =
-              searchQuery.isEmpty ||
-              lead.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              lead.number.contains(searchQuery);
-
-          return matchesLoan && matchesStatus && matchesSearch;
-        }).toList();
 
     return AppScaffold(
       isFloatingActionButton: true,
@@ -106,7 +118,10 @@ class _LeadsScreenState extends State<LeadsScreen> {
                     child: Text(type, style: const TextStyle(fontSize: 14)),
                   );
                 }).toList(),
-            onChanged: (value) => setState(() => loanSelectedItem = value!),
+            onChanged: (value) {
+              setState(() => loanSelectedItem = value!);
+              _fetchLeads();
+            },
           ),
         ],
       ),
@@ -205,7 +220,10 @@ class _LeadsScreenState extends State<LeadsScreen> {
                   vertical: 4,
                 ),
                 child: TextField(
-                  onChanged: (value) => setState(() => searchQuery = value),
+                  onSubmitted: (value) {
+                    setState(() => searchQuery = value);
+                    _fetchLeads();
+                  },
                   decoration: InputDecoration(
                     hintText: "Search by name...",
                     prefixIcon: const Icon(Icons.search),
@@ -225,7 +243,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
               child: Row(
                 children: [
                   Text(
-                    "Total Leads: ${filteredLeads.length}",
+                    "Total Leads: ${leadProvider.currentViewTotalLeads}",
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -241,7 +259,10 @@ class _LeadsScreenState extends State<LeadsScreen> {
                 itemBuilder: (context, index) {
                   final option = statusOptions[index];
                   return GestureDetector(
-                    onTap: () => setState(() => selectedStatusItem = option),
+                    onTap: () {
+                      setState(() => selectedStatusItem = option);
+                      _fetchLeads();
+                    },
                     child: Container(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 4,
@@ -272,20 +293,23 @@ class _LeadsScreenState extends State<LeadsScreen> {
             // Main content with RefreshIndicator
             Expanded(
               child: RefreshIndicator(
-                onRefresh:
-                    () => Provider.of<LeadProvider>(
-                      context,
-                      listen: false,
-                    ).fetchLeads(start: startDate, end: endDate),
+                onRefresh: () async => _fetchLeads(),
                 child:
-                    isLoading
+                    isLoading && leads.isEmpty
                         ? const Center(child: CircularProgressIndicator())
-                        : filteredLeads.isEmpty
+                        : leads.isEmpty
                         ? const Center(child: Text("No leads found"))
                         : ListView.builder(
-                          itemCount: filteredLeads.length,
+                          controller: _scrollController,
+                          itemCount: leads.length + (leadProvider.hasMore ? 1 : 0),
                           itemBuilder: (context, index) {
-                            final lead = filteredLeads[index];
+                            if (index == leads.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                            }
+                            final lead = leads[index];
                             return GestureDetector(
                               onTap: () {
                                 Navigator.push(
@@ -332,10 +356,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
     );
     if (picked != null) {
       setState(() => startDate = picked);
-      Provider.of<LeadProvider>(
-        context,
-        listen: false,
-      ).fetchLeads(start: startDate, end: endDate);
+      _fetchLeads();
     }
   }
 
@@ -348,10 +369,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
     );
     if (picked != null) {
       setState(() => endDate = picked);
-      Provider.of<LeadProvider>(
-        context,
-        listen: false,
-      ).fetchLeads(start: startDate, end: endDate);
+      _fetchLeads();
     }
   }
 }

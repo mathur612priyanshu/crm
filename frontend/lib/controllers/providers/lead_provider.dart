@@ -13,12 +13,17 @@ class LeadProvider with ChangeNotifier {
 
   // List<Leads> _freshLeads = [];
   bool _isLoading = false;
+  bool _hasMore = true;
+  int _currentPage = 1;
+  int _currentViewTotalLeads = 0;
 
   List<Leads> get leads => _leads;
   int get totalLeadsCount => _totalLeadsCount;
   List<Leads> get todayLeads => _todayLeads;
   List<Leads> get tomorrowLeads => _tomorrowLeads;
   List<Leads> get fileLoginLeads => _fileLoginLeads;
+  bool get hasMore => _hasMore;
+  int get currentViewTotalLeads => _currentViewTotalLeads;
 
   // int allLeads => _allLeads;
   Future<List<Leads>> get freshLeads async {
@@ -31,20 +36,65 @@ class LeadProvider with ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
-  Future<void> fetchLeads({DateTime? start, DateTime? end}) async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchLeads({
+    DateTime? start,
+    DateTime? end,
+    bool loadMore = false,
+    String search = "",
+    String status = "All",
+    String loanType = "All",
+  }) async {
+    if (loadMore) {
+      if (!_hasMore || _isLoading) return;
+      _currentPage++;
+      _isLoading = true;
+      notifyListeners();
+    } else {
+      _isLoading = true;
+      _currentPage = 1;
+      _hasMore = true;
+      _leads = [];
+      notifyListeners();
+    }
+
     try {
-      DateTime startDate =
-          start ?? DateTime.now().subtract(const Duration(days: 30));
-      DateTime endDate = end ?? DateTime.now();
-      endDate = endDate.add(Duration(days: 1));
-      _leads = await ApiService.fetchLeads(startDate, endDate);
-      _lastStartDate = startDate;
-      _lastEndDate = endDate;
+      DateTime startDate = start ?? _lastStartDate;
+      DateTime endDate = end ?? _lastEndDate;
+      if (!loadMore) {
+        startDate = start ?? DateTime.now().subtract(const Duration(days: 30));
+        endDate = end ?? DateTime.now();
+        endDate = endDate.add(const Duration(days: 1));
+        _lastStartDate = startDate;
+        _lastEndDate = endDate;
+      }
+
+      final result = await ApiService.fetchLeads(
+        startDate,
+        endDate,
+        page: _currentPage,
+        search: search,
+        status: status,
+        loanType: loanType,
+      );
+
+      final List<Leads> fetchedLeads = List<Leads>.from(result['leads']);
+
+      if (loadMore) {
+        _leads.addAll(fetchedLeads);
+      } else {
+        _leads = fetchedLeads;
+      }
+
+      if (result['pagination'] != null) {
+        _currentViewTotalLeads = result['pagination']['totalItems'] ?? 0;
+        _hasMore = result['pagination']['hasNextPage'] ?? false;
+      } else {
+        _currentViewTotalLeads = _leads.length;
+        _hasMore = false;
+      }
     } catch (e) {
       print("Error fetching leads: $e");
-      _leads = []; // fallback on error
+      if (!loadMore) _leads = [];
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -67,10 +67,41 @@ class DynamicBarChart extends StatelessWidget {
                     ? statusCounts.values.reduce((a, b) => a > b ? a : b)
                     : 1) +
                 3,
-            barTouchData: BarTouchData(enabled: true),
+            barTouchData: BarTouchData(
+              enabled: false,
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (group) => Colors.transparent,
+                tooltipPadding: EdgeInsets.zero,
+                tooltipMargin: 4,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return BarTooltipItem(
+                    rod.toY.round().toString(),
+                    TextStyle(
+                      color: rod.color ?? Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  );
+                },
+              ),
+            ),
             gridData: FlGridData(show: false),
             titlesData: FlTitlesData(
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 28,
+                  getTitlesWidget: (value, meta) {
+                    if (value == value.toInt()) {
+                      return Text(
+                        value.toInt().toString(),
+                        style: const TextStyle(fontSize: 10),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -82,8 +113,8 @@ class DynamicBarChart extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            textAlign: TextAlign.center,
                             statusList[index],
+                            textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 10),
                           ),
                         ),
@@ -91,7 +122,7 @@ class DynamicBarChart extends StatelessWidget {
                     }
                     return const SizedBox.shrink();
                   },
-                  reservedSize: 40,
+                  reservedSize: 60,
                 ),
               ),
               rightTitles: AxisTitles(
@@ -104,6 +135,7 @@ class DynamicBarChart extends StatelessWidget {
               final count = statusCounts[statusList[index]] ?? 0;
               return BarChartGroupData(
                 x: index,
+                showingTooltipIndicators: [0],
                 barRods: [
                   BarChartRodData(
                     toY: count.toDouble(),

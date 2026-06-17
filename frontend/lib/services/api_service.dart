@@ -118,10 +118,15 @@ class ApiService {
     throw Exception("Failed to fetch lead statuses: ${response.body}");
   }
 
-  static Future<List<Leads>> fetchLeads(
+  static Future<Map<String, dynamic>> fetchLeads(
     DateTime startDate,
-    DateTime endDate,
-  ) async {
+    DateTime endDate, {
+    int page = 1,
+    int? limit,
+    String search = "",
+    String status = "All",
+    String loanType = "All",
+  }) async {
     final emp_id = await secureStorage.read(key: "userId");
 
     // Set default values if dates are null
@@ -129,6 +134,11 @@ class ApiService {
       queryParameters: {
         'startDate': DateFormat('yyyy-MM-dd').format(startDate),
         'endDate': DateFormat('yyyy-MM-dd').format(endDate),
+        'page': page.toString(),
+        if (limit != null) 'limit': limit.toString(),
+        if (search.isNotEmpty) 'search': search,
+        if (status != "All") 'status': status,
+        if (loanType != "All") 'loanType': loanType,
       },
     );
 
@@ -137,7 +147,10 @@ class ApiService {
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
       final List jsonData = decoded['data'] ?? decoded;
-      return jsonData.map((e) => Leads.fromJson(e)).toList();
+      return {
+        'leads': jsonData.map((e) => Leads.fromJson(e)).toList(),
+        'pagination': decoded['pagination'],
+      };
     } else {
       throw Exception("Failed to load leads");
     }

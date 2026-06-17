@@ -207,6 +207,7 @@ class TemplateDialog {
                                       sendImageWithMessageToWhatsApp(
                                         selectedFileUrl,
                                         messageController.text.trim(),
+                                        phone,
                                       );
                                     },
                                     icon: Icon(Icons.send),
@@ -237,6 +238,7 @@ class TemplateDialog {
 Future<void> sendImageWithMessageToWhatsApp(
   String imageUrl,
   String message,
+  String phone,
 ) async {
   const platform = MethodChannel(
     'com.trustingbrains.callingcrm/whatsapp_share',
@@ -246,6 +248,7 @@ Future<void> sendImageWithMessageToWhatsApp(
     await platform.invokeMethod('shareImageToWhatsApp', {
       'imageUrl': imageUrl,
       'message': message,
+      'phone': phone,
     });
   } on PlatformException catch (e) {
     debugPrint("Failed to send: ${e.message}");

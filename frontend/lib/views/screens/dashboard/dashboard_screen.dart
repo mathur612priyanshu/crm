@@ -67,7 +67,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> getLeadsForGraph() async {
     final startDate = DateTime.now().subtract(Duration(days: selectedDays));
     final endDate = DateTime.now().add(const Duration(days: 1));
-    leadsForGraph = await ApiService.fetchLeads(startDate, endDate);
+    final result = await ApiService.fetchLeads(startDate, endDate, limit: 5000);
+    leadsForGraph = List<Leads>.from(result['leads']);
     setState(() {});
   }
 

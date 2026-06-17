@@ -668,7 +668,7 @@ exports.leadsByDate = async (req, res) => {
   }
 } 
 exports.leadsByEmpIdAndDate = async (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate, search, status, loanType } = req.query;
   const { emp_id } = req.params;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
@@ -679,14 +679,39 @@ exports.leadsByEmpIdAndDate = async (req, res) => {
   }
 
   try {
+    const whereClause = {
+      person_id: emp_id,
+      createdAt: {
+        [Op.between]: [new Date(startDate), new Date(endDate)]
+      }
+    };
+
+    if (search && search.trim() !== '') {
+      whereClause[Op.or] = [
+        { name: { [Op.like]: `%${search.trim()}%` } },
+        { number: { [Op.like]: `%${search.trim()}%` } }
+      ];
+    }
+
+    if (loanType && loanType !== 'All') {
+      whereClause.loan_type = loanType;
+    }
+
+    const includeOptions = [
+      {
+        model: LeadStatus,
+        as: "statusDetails",
+        attributes: ["status_id", "name", "team", "is_initial", "is_file_login"],
+      }
+    ];
+
+    if (status && status !== 'All') {
+      includeOptions[0].where = { name: status };
+    }
+
     const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
-      where: {
-        person_id: emp_id,
-        createdAt: {
-          [Op.between]: [new Date(startDate), new Date(endDate)]
-        }
-      },
-      include: [leadStatusInclude],
+      where: whereClause,
+      include: includeOptions,
       limit,
       offset,
       order: [['createdAt', 'DESC']]

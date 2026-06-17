@@ -22,18 +22,19 @@ class MainActivity : FlutterActivity() {
             if (call.method == "shareImageToWhatsApp") {
                 val imageUrl = call.argument<String>("imageUrl") ?: ""
                 val message = call.argument<String>("message") ?: ""
+                val phone = call.argument<String>("phone") ?: ""
 
                 if (imageUrl.isNotEmpty()) {
                     // Image URL is provided
                     if (imageUrl.endsWith(".pdf")) {
-                        shareFileToWhatsApp(imageUrl, message, "application/pdf")
+                        shareFileToWhatsApp(imageUrl, message, phone, "application/pdf")
                     } else {
-                        shareFileToWhatsApp(imageUrl, message, "image/*")
+                        shareFileToWhatsApp(imageUrl, message, phone, "image/*")
                     }
                     result.success("File shared to WhatsApp")
                 } else if (message.isNotEmpty()) {
                     // Only message to send
-                    shareTextToWhatsApp(message)
+                    shareTextToWhatsApp(message, phone)
                     result.success("Message shared to WhatsApp")
                 } else {
                     result.error("NO_DATA", "No image or message provided", null)
@@ -42,15 +43,32 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun shareTextToWhatsApp(message: String) {
+    private fun shareTextToWhatsApp(message: String, phone: String) {
         val intent = Intent(Intent.ACTION_SEND)
         intent.type = "text/plain"
-        intent.setPackage("com.whatsapp")
         intent.putExtra(Intent.EXTRA_TEXT, message)
-        startActivity(intent)
+        if (phone.isNotEmpty()) {
+            var formattedPhone = phone.replace("+", "").replace(" ", "").replace("-", "")
+            if (formattedPhone.length == 10) {
+                formattedPhone = "91$formattedPhone"
+            }
+            intent.putExtra("jid", "$formattedPhone@s.whatsapp.net")
+        }
+        intent.setPackage("com.whatsapp")
+        
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            intent.setPackage("com.whatsapp.w4b")
+            try {
+                startActivity(intent)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
     }
 
-    private fun shareFileToWhatsApp(fileUrl: String, message: String, mimeType: String) {
+    private fun shareFileToWhatsApp(fileUrl: String, message: String, phone: String, mimeType: String) {
         Thread {
                     try {
                         val input = URL(fileUrl).openStream()
@@ -72,11 +90,29 @@ class MainActivity : FlutterActivity() {
                         if (message.isNotEmpty()) {
                             intent.putExtra(Intent.EXTRA_TEXT, message)
                         }
+        if (phone.isNotEmpty()) {
+            var formattedPhone = phone.replace("+", "").replace(" ", "").replace("-", "")
+            if (formattedPhone.length == 10) {
+                formattedPhone = "91$formattedPhone"
+            }
+            intent.putExtra("jid", "$formattedPhone@s.whatsapp.net")
+        }
                         intent.setPackage("com.whatsapp")
                         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
                         // Start activity on main thread
-                        runOnUiThread { startActivity(intent) }
+                        runOnUiThread { 
+                            try {
+                                startActivity(intent)
+                            } catch (e: Exception) {
+                                intent.setPackage("com.whatsapp.w4b")
+                                try {
+                                    startActivity(intent)
+                                } catch (ex: Exception) {
+                                    ex.printStackTrace()
+                                }
+                            }
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

@@ -8,14 +8,12 @@ const LeadDetailScreen = () => {
   const { id } = useParams();
 
   const [lead, setLead] = useState(null);
-
   const [calls, setCalls] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [personNames] = useState({});
   const [histories, setHistories] = useState([]);
   const [activeTab, setActiveTab] = useState("calls");
-
-
+  const [loading, setLoading] = useState(true);
 
 const downloadexcel = () => {
   // Prepare calls data
@@ -122,26 +120,6 @@ const downloadexcel = () => {
       const response = await axios.get(`${API_URL}/callsByLeadId/${id}`);
       const calls = response.data.calls;
       setCalls(calls);
-
-      // const nameMap = {};
-      // await Promise.all(
-      //   calls.map(async (call) => {
-      //     if (call.emp_id) {
-      //       try {
-      //         const personRes = await axios.get(
-      //           `${API_URL}/employees/${call.emp_id}`
-      //         );
-      //         if (personRes.status === 200) {
-      //           nameMap[call.emp_id] = personRes.data.ename;
-      //         }
-      //       } catch (err) {
-      //         nameMap[call.emp_id] = "N/A";
-      //         console.error("Error fetching person name:", call.emp_id, err);
-      //       }
-      //     }
-      //   })
-      // );
-      // setPersonNames(nameMap);
     } catch (error) {
       console.error("Error fetching calls: ", error);
     }
@@ -166,11 +144,27 @@ const downloadexcel = () => {
   }
 
   useEffect(() => {
-    fetchLeadDetails();
-    fetchCallDetails();
-    fetchHistoryDetails();
-    fetchTaskDetails();
-  }, []);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchLeadDetails(),
+          fetchCallDetails(),
+          fetchHistoryDetails(),
+          fetchTaskDetails()
+        ]);
+      } catch (err) {
+        console.error("Error loading lead details data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) {
+      loadData();
+    }
+  }, [id]);
+
+  if (loading) return <div className="text-center py-8">Loading Lead details...</div>;
 
   return (
     <div style={{ padding: "20px" }}>
@@ -254,7 +248,7 @@ const downloadexcel = () => {
             <tbody>
               {calls.map((call, index) => (
                 <tr key={index} className="hover:bg-gray-50">
-                  <td className="border px-4 py-2">{lead.owner || "N/A"}</td>
+                  <td className="border px-4 py-2">{lead?.owner || "N/A"}</td>
                   <td className="border px-4 py-2">{call.number}</td>
                   <td className="border px-4 py-2">{call.remark}</td>
                   <td className="border px-4 py-2">{new Date(call.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</td>

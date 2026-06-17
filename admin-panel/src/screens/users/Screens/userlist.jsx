@@ -327,7 +327,7 @@ const UserList = () => {
       {/* Edit User Modal */}
       {showEditModal && selectedUser && (
   <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-6 rounded shadow-md w-96">
+    <div className="bg-white p-6 rounded shadow-md w-96 max-h-[90vh] overflow-y-auto">
       <h2 className="text-lg font-semibold mb-4">Update User</h2>
       <form
         onSubmit={(e) => {
@@ -337,52 +337,80 @@ const UserList = () => {
         }}
         className="space-y-4"
       >
-        <input
-          type="text"
-          defaultValue={selectedUser.ename}
-          onChange={(e) => selectedUser.ename = e.target.value}
-          className="w-full border px-3 py-2 rounded"
-          placeholder="Name"
-        />
-        <input
-          type="email"
-          defaultValue={selectedUser.email}
-          onChange={(e) => selectedUser.email = e.target.value}
-          className="w-full border px-3 py-2 rounded"
-          placeholder="Email"
-        />
-        <input
-          type="text"
-          defaultValue={selectedUser.phone}
-          onChange={(e) => selectedUser.phone = e.target.value}
-          className="w-full border px-3 py-2 rounded"
-          placeholder="Phone Number"
-        />
-        <input
-          type="text"
-          defaultValue={selectedUser.password}
-          onChange={(e) => selectedUser.password = e.target.value}
-          className="w-full border px-3 py-2 rounded"
-          placeholder="Password"
-        />
-        <select
-          defaultValue={selectedUser.role || "calling"}
-          onChange={(e) => selectedUser.role = e.target.value}
-          className="w-full border px-3 py-2 rounded"
-        >
-          <option value="calling">Calling Employee</option>
-          <option value="manager">Manager</option>
-          <option value="operations">Operations Employee</option>
-        </select>
-        <select
-          defaultValue={selectedUser.status || "active"}
-          onChange={(e) => selectedUser.status = e.target.value}
-          className="w-full border px-3 py-2 rounded"
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <div className="flex justify-end gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <input
+            type="text"
+            value={selectedUser.ename || ''}
+            onChange={(e) => setSelectedUser({ ...selectedUser, ename: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+            placeholder="Name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <input
+            type="text"
+            value={selectedUser.username || ''}
+            onChange={(e) => setSelectedUser({ ...selectedUser, username: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+            placeholder="Username"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            value={selectedUser.email || ''}
+            onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+            placeholder="Email"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+          <input
+            type="text"
+            value={selectedUser.phone || ''}
+            onChange={(e) => setSelectedUser({ ...selectedUser, phone: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+            placeholder="Phone Number"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input
+            type="text"
+            value={selectedUser.password || ''}
+            onChange={(e) => setSelectedUser({ ...selectedUser, password: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+            placeholder="Password"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+          <select
+            value={selectedUser.role || "calling"}
+            onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+          >
+            <option value="calling">Calling Employee</option>
+            <option value="manager">Manager</option>
+            <option value="operations">Operations Employee</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select
+            value={selectedUser.status || "active"}
+            onChange={(e) => setSelectedUser({ ...selectedUser, status: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div className="flex justify-end gap-3 mt-4">
           <button
             type="button"
             onClick={() => setShowEditModal(false)}

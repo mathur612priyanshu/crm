@@ -22,35 +22,20 @@ const Home = () => {
   const { statuses } = useStatuses();
   const [showPopup, setShowPopup] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
-  const [modalLeads, setModalLeads] = useState([]);
-  const [calls, setCalls] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [employeeStats, setEmployeeStats] = useState([]);
-  const [todayFollowups, setTodayFollowups] = useState([]);
-  const [tomorrowFollowups, setTomorrowFollowups] = useState([]);
-  const [pendingFollowups, setPendingFollowups] = useState([]);
-  const leadsList = Array.isArray(leads) ? leads : [];
-
-  const safeArray = (arr) => (Array.isArray(arr) ? arr : []);
-
-  // Dynamic status counts based on backend statuses
-  const leadStatusCounts = {};
-  statuses.forEach(status => {
-    leadStatusCounts[status.name] = safeArray(leadsList).filter(lead => lead.status === status.name);
+  const [stats, setStats] = useState({
+    counts: {
+      totalCalls: 0,
+      totalLeads: 0,
+      todayFollowups: 0,
+      tomorrowFollowups: 0,
+      pendingFollowups: 0
+    },
+    leadStatusCounts: {},
+    loanTypeCounts: {},
+    employeeStats: []
   });
 
-  const homeLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Home Loan');
-  const mortgageLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Mortgage Loan');
-  const userCarLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'User Car Loan');
-  const businessLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Business Loan');
-  const personalLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Personal Loan');
-  const dodLoanLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'DOD');
-  const ccOdLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'CC/OD');
-  const cgtmsmeLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'CGTMSME');
-  const mutualFundLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Mutual Fund');
-  const insuranceLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Insurance');
-  const otherLeads = safeArray(leadsList).filter(lead => lead.loan_type === 'Other');
+  const employeeStats = stats.employeeStats || [];
   const navigate = useNavigate();
   
   const getTodayRange = () => {
@@ -81,95 +66,32 @@ const Home = () => {
 
   const fetchData = async (startDate, endDate) => {
     try {
-      const callResponse = await axios.get(`${API_URL}/callsByDates`, {
+      const response = await axios.get(`${API_URL}/dashboardStats`, {
         params: { startDate, endDate },
       });
-      const leadResponse = await axios.get(`${API_URL}/getLeadsByDate`, {
-        params: { startDate, endDate },
-      });
-      const employeeResponse = await axios.get(`${API_URL}/employees`);
-      const followupsResponse = await axios.get(`${API_URL}/getFollowupsCount`);
-
-      const callsData = callResponse?.data?.calls;
-      const leadsData = leadResponse?.data;
-      const employeesData = employeeResponse?.data?.employees;
-      const followupsData = followupsResponse?.data?.data;
-
-      setCalls(Array.isArray(callsData) ? callsData : []);
-      setLeads(Array.isArray(leadsData) ? leadsData : Array.isArray(leadsData?.data) ? leadsData.data : []);
-      setEmployees(Array.isArray(employeesData) ? employeesData : []);
-
-      setTodayFollowups(Array.isArray(followupsData?.todayFollowups) ? followupsData.todayFollowups : []);
-      setTomorrowFollowups(Array.isArray(followupsData?.tomorrowFollowups) ? followupsData.tomorrowFollowups : []);
-      setPendingFollowups(Array.isArray(followupsData?.pendingFollowups) ? followupsData.pendingFollowups : []);
+      if (response.data?.success) {
+        setStats(response.data);
+      }
     } catch (error) {
-      console.error("Error fetching calls by date range", error);
-      setCalls([]);
-      setLeads([]);
-      setEmployees([]);
-      setTodayFollowups([]);
-      setTomorrowFollowups([]);
-      setPendingFollowups([]);
+      console.error("Error fetching dashboard stats", error);
     }
-  };
-
-  const generateEmployeeStats = (employees, leads, calls, currentStatuses) => {
-    return employees.map((emp) => {
-      const empLeads = leads.filter((lead) => lead.person_id === emp.emp_id);
-      const empCalls = calls.filter((call) => call.emp_id === emp.emp_id);
-
-      // Dynamically use the second status as "Interested" or fallback to 'Interested'
-      const activeStatus = currentStatuses.length > 1 ? currentStatuses[1].name : (currentStatuses.length > 0 ? currentStatuses[0].name : "Interested");
-
-      return {
-        id: emp.emp_id,
-        name: emp.ename,
-        avatar: emp.ename
-          ?.split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase(),
-        totalCalls: empCalls.length,
-        totalLeads: empLeads.length,
-        interestedLeads: empLeads.filter((lead) => lead.status === activeStatus).length,
-      };
-    });
   };
 
   const handleMetricClick = (title) => {
     setModalTitle(title);
-
-    if (title === 'Total Calls') {
-      setModalLeads(calls);
-    } else if (title === 'Total Leads') {
-      setModalLeads(leads);
-    } else if (title === 'Today Followups') {
-      setModalLeads(todayFollowups);
-    } else if(title === 'Tomorrow Followups') {
-      setModalLeads(tomorrowFollowups);
-    } else if(title === 'Pending Followups') {
-      setModalLeads(pendingFollowups);
-    } else {
-      setModalLeads(leadStatusCounts[title] || []);
-    }
     setShowPopup(true);
   };
 
-  useEffect(() => {
-    const stats = generateEmployeeStats(employees, leads, calls, statuses);
-    setEmployeeStats(stats);
-  }, [employees, leads, calls, statuses]);
-
   const metricsData1 = [
-    { title: 'Total Calls', value: calls.length, icon: <Phone className="w-5 h-5" />},
-    { title: 'Total Leads', value: leads.length, icon: <Users className="w-5 h-5" />},
-    { title: 'Today Followups', value: todayFollowups.length, icon: <Calendar className="w-5 h-5" />},
-    { title: 'Tomorrow Followups', value: tomorrowFollowups.length, icon: <Calendar className="w-5 h-5" />},
+    { title: 'Total Calls', value: stats.counts.totalCalls, icon: <Phone className="w-5 h-5" />},
+    { title: 'Total Leads', value: stats.counts.totalLeads, icon: <Users className="w-5 h-5" />},
+    { title: 'Today Followups', value: stats.counts.todayFollowups, icon: <Calendar className="w-5 h-5" />},
+    { title: 'Tomorrow Followups', value: stats.counts.tomorrowFollowups, icon: <Calendar className="w-5 h-5" />},
   ];
 
   const matricsData2 = [
     ...statuses.map((status, idx) => {
-      const leadsForStatus = leadStatusCounts[status.name] || [];
+      const value = stats.leadStatusCounts[status.name] || 0;
       const icons = [
         <Users className="w-5 h-5" />,
         <CheckCircle className="w-5 h-5" />,
@@ -179,19 +101,19 @@ const Home = () => {
       ];
       return {
         title: status.name,
-        value: leadsForStatus.length,
+        value: value,
         icon: icons[idx % icons.length]
       };
     }),
-    { title: 'Pending Followups', value: pendingFollowups.length, icon: <Calendar className="w-5 h-5" /> }
+    { title: 'Pending Followups', value: stats.counts.pendingFollowups, icon: <Calendar className="w-5 h-5" /> }
   ];
 
   const leadsData = statuses.map((status, idx) => {
-    const leadsForStatus = leadStatusCounts[status.name] || [];
+    const value = stats.leadStatusCounts[status.name] || 0;
 
     return {
       name: status.name,
-      value: leadsForStatus.length,
+      value: value,
       color: status.color || [
         "#6366f1",
         "#3b82f6",
@@ -208,17 +130,17 @@ const Home = () => {
   });
 
   const pieData = [
-    { name: 'Home Loans', value: homeLoanLeads.length, color: '#3b82f6' },
-    { name: 'User Car Loans', value: userCarLoanLeads.length, color: '#f97316' },
-    { name: 'Business Loans', value: businessLoanLeads.length, color: '#f59e0b' },
-    { name: 'Personal Loans', value: personalLoanLeads.length, color: '#10b981' },
-    { name: 'DOD Loans', value: dodLoanLeads.length, color: '#f43f5e' },
-    { name: 'Mortgage Loans', value: mortgageLoanLeads.length, color: '#8b5cf6' },
-    { name: 'CC/OD', value: ccOdLeads.length, color: '#4ade80' },
-    { name: 'CGTMSME', value: cgtmsmeLeads.length, color: '#a78bfa' },
-    { name: 'Mutual Fund', value: mutualFundLeads.length, color: '#8b5cf6' },
-    { name: 'Insurance', value: insuranceLeads.length, color: '#ec4899' },
-    { name: 'Other', value: otherLeads.length, color: '#f43f5e' }
+    { name: 'Home Loans', value: stats.loanTypeCounts['Home Loan'] || 0, color: '#3b82f6' },
+    { name: 'User Car Loans', value: stats.loanTypeCounts['User Car Loan'] || 0, color: '#f97316' },
+    { name: 'Business Loans', value: stats.loanTypeCounts['Business Loan'] || 0, color: '#f59e0b' },
+    { name: 'Personal Loans', value: stats.loanTypeCounts['Personal Loan'] || 0, color: '#10b981' },
+    { name: 'DOD Loans', value: stats.loanTypeCounts['DOD'] || 0, color: '#f43f5e' },
+    { name: 'Mortgage Loans', value: stats.loanTypeCounts['Mortgage Loan'] || 0, color: '#8b5cf6' },
+    { name: 'CC/OD', value: stats.loanTypeCounts['CC/OD'] || 0, color: '#4ade80' },
+    { name: 'CGTMSME', value: stats.loanTypeCounts['CGTMSME'] || 0, color: '#a78bfa' },
+    { name: 'Mutual Fund', value: stats.loanTypeCounts['Mutual Fund'] || 0, color: '#8b5cf6' },
+    { name: 'Insurance', value: stats.loanTypeCounts['Insurance'] || 0, color: '#ec4899' },
+    { name: 'Other', value: stats.loanTypeCounts['Other'] || 0, color: '#f43f5e' }
   ];
 
   const MetricCard = ({ title, value, icon}) => (
@@ -386,7 +308,8 @@ const Home = () => {
           isOpen={showPopup}
           onClose={() => setShowPopup(false)}
           title={modalTitle}
-          leads={modalLeads}
+          startDate={fromDate}
+          endDate={toDate}
         />
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">

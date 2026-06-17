@@ -10,6 +10,9 @@ const UserDetailScreen = () => {
   const [leads, setLeads] = useState([]);
   const [calls, setCalls] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [totalCalls, setTotalCalls] = useState(0);
+  const [totalTasks, setTotalTasks] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -31,26 +34,11 @@ const UserDetailScreen = () => {
 
   // Fetch employee details
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchEmployee = async () => {
       try {
         setLoading(true);
-        
-        // Fetch employee data
         const empResponse = await axios.get(`${API_URL}/employees/${emp_id}`);
         setEmployee(empResponse.data);
-        
-        // Fetch leads associated with this employee
-        const leadsResponse = await axios.get(`${API_URL}/leads/${emp_id}`);
-        setLeads(leadsResponse.data?.data || (Array.isArray(leadsResponse.data) ? leadsResponse.data : []));
-        
-        // Fetch calls associated with this employee
-        const callsResponse = await axios.get(`${API_URL}/calls/${emp_id}`);
-        setCalls(callsResponse.data.calls);
-
-        // Fetch tasks associated with this employee
-        const tasksResponse = await axios.get(`${API_URL}/task/${emp_id}`);
-        setTasks(tasksResponse.data.tasks);
-        
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -58,8 +46,56 @@ const UserDetailScreen = () => {
       }
     };
 
-    fetchData();
+    if (emp_id) fetchEmployee();
   }, [emp_id]);
+
+  // Fetch leads
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/leads/${emp_id}`, {
+          params: { page: leadsPage, limit: leadsPerPage }
+        });
+        setLeads(response.data?.data || (Array.isArray(response.data) ? response.data : []));
+        setTotalLeads(response.data?.pagination?.totalItems || (Array.isArray(response.data) ? response.data.length : 0));
+      } catch (err) {
+        console.error("Error fetching leads", err);
+      }
+    };
+    if (emp_id) fetchLeads();
+  }, [emp_id, leadsPage, leadsPerPage]);
+
+  // Fetch calls
+  useEffect(() => {
+    const fetchCalls = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/calls/${emp_id}`, {
+          params: { page: callsPage, limit: callsPerPage }
+        });
+        setCalls(response.data?.calls || []);
+        setTotalCalls(response.data?.pagination?.totalItems || (Array.isArray(response.data?.calls) ? response.data.calls.length : 0));
+      } catch (err) {
+        console.error("Error fetching calls", err);
+      }
+    };
+    if (emp_id) fetchCalls();
+  }, [emp_id, callsPage, callsPerPage]);
+
+  // Fetch tasks
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/task/${emp_id}`, {
+          params: { page: tasksPage, limit: tasksPerPage }
+        });
+        setTasks(response.data?.tasks || []);
+        setTotalTasks(response.data?.pagination?.totalItems || (Array.isArray(response.data?.tasks) ? response.data.tasks.length : 0));
+      } catch (err) {
+        console.error("Error fetching tasks", err);
+      }
+    };
+    if (emp_id) fetchTasks();
+  }, [emp_id, tasksPage, tasksPerPage]);
 
   // items per page selector
   const ItemsPerPageDropdown = ({ value, options = [5, 10, 20, 50, 100], onChange }) => {
@@ -89,25 +125,13 @@ const UserDetailScreen = () => {
   );
 };
 
-  // Calculate paginated data
-  const paginatedLeads = leads.slice(
-    (leadsPage - 1) * leadsPerPage,
-    leadsPage * leadsPerPage
-  );
+  const paginatedLeads = leads;
+  const paginatedCalls = calls;
+  const paginatedTasks = tasks;
 
-  const paginatedCalls = calls.slice(
-    (callsPage - 1) * callsPerPage,
-    callsPage * callsPerPage
-  );
-
-  const paginatedTasks = tasks.slice(
-    (tasksPage-1)*tasksPerPage,
-    tasksPage * tasksPerPage
-  );
-
-  const totalLeadsPages = Math.ceil(leads.length / leadsPerPage);
-  const totalCallsPages = Math.ceil(calls.length / callsPerPage);
-  const totalTasksPages = Math.ceil(tasks.length / tasksPerPage);
+  const totalLeadsPages = Math.ceil(totalLeads / leadsPerPage);
+  const totalCallsPages = Math.ceil(totalCalls / callsPerPage);
+  const totalTasksPages = Math.ceil(totalTasks / tasksPerPage);
 
   if (loading) return <div className="text-center py-8">Loading...</div>;
   if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
@@ -167,7 +191,7 @@ const UserDetailScreen = () => {
             onClick={() => setShowLeads(!showLeads)}
             className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            {showLeads ? 'Hide' : 'Show'} Leads ({leads.length})
+            {showLeads ? 'Hide' : 'Show'} Leads ({totalLeads})
           </button>
         </div>
         
@@ -209,7 +233,7 @@ const UserDetailScreen = () => {
             </div>
             
             {/* Leads Pagination */}
-            {leads.length > leadsPerPage && (
+            {totalLeads > leadsPerPage && (
               <div className="flex justify-between items-center mt-4">
                 <button
                   onClick={() => setLeadsPage(prev => Math.max(prev - 1, 1))}
@@ -247,7 +271,7 @@ const UserDetailScreen = () => {
             onClick={() => setShowCalls(!showCalls)}
             className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            {showCalls ? 'Hide' : 'Show'} Calls ({calls.length})
+            {showCalls ? 'Hide' : 'Show'} Calls ({totalCalls})
           </button>
         </div>
         
@@ -288,7 +312,7 @@ const UserDetailScreen = () => {
             </div>
             
             {/* Calls Pagination */}
-            {calls.length > callsPerPage && (
+            {totalCalls > callsPerPage && (
               <div className="flex justify-between items-center mt-4">
                 <button
                   onClick={() => setCallsPage(prev => Math.max(prev - 1, 1))}
@@ -326,7 +350,7 @@ const UserDetailScreen = () => {
             onClick={() => setShowTasks(!showTasks)}
             className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            {showTasks ? 'Hide' : 'Show'} Tasks ({tasks.length})
+            {showTasks ? 'Hide' : 'Show'} Tasks ({totalTasks})
           </button>
         </div>
         
@@ -397,7 +421,7 @@ const UserDetailScreen = () => {
             </div>
             
             {/* Tasks Pagination */}
-            {tasks.length > tasksPerPage && (
+            {totalTasks > tasksPerPage && (
               <div className="flex justify-between items-center mt-4">
                 <button
                   onClick={() => setTasksPage(prev => Math.max(prev - 1, 1))}

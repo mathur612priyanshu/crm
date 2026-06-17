@@ -165,8 +165,8 @@ function TaskScreen() {
 
       {/* Task Description Modal */}
       {modalDesc && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative">
+        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setModalDesc("")}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative" onClick={(e) => e.stopPropagation()}>
             <button
               className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl"
               onClick={() => setModalDesc("")}
@@ -181,8 +181,8 @@ function TaskScreen() {
 
       {/* Add Task Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative">
+        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative" onClick={(e) => e.stopPropagation()}>
             <button
               className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl"
               onClick={() => setShowAddModal(false)}

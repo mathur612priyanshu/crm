@@ -33,6 +33,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
   String selectedStatusItem = "All";
   bool showSearchBar = false;
   String searchQuery = "";
+  final ScrollController _scrollController = ScrollController();
 
   final List<String> loanTypeOptions = [
     "All",
@@ -52,7 +53,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    _scrollController.dispose();
     super.dispose();
     // Provider.of<CallsProvider>(context, listen: false).clearFilteredCalls();
   }
@@ -60,6 +61,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_scrollListener);
     final today = DateTime.now();
     startDate =
         widget.title != "Today Calls"
@@ -73,7 +75,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
     setState(() => isLoading = true);
     try {
       // if (startDate != null && endDate != null) {
-      Provider.of<CallsProvider>(context, listen: false).filterCallsByDateRange(
+      await Provider.of<CallsProvider>(context, listen: false).filterCallsByDateRange(
         startDate!,
         endDate!,
         selectedStatusItem,
@@ -84,6 +86,12 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
       print("Error fetching call logs: $e");
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      Provider.of<CallsProvider>(context, listen: false).fetchMoreFilteredCalls();
     }
   }
 
@@ -126,6 +134,10 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
               call.name.toLowerCase().contains(searchQuery.toLowerCase());
           return matchesSearch;
         }).toList();
+
+    final totalCountDisplay = searchQuery.isEmpty 
+        ? callProvider.totalFilteredCallsCount 
+        : filteredCallLogs.length;
 
     return AppScaffold(
       isFloatingActionButton: false,
@@ -263,7 +275,7 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
               child: Row(
                 children: [
                   Text(
-                    "Total Calls: ${filteredCallLogs.length}",
+                    "Total Calls: $totalCountDisplay",
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -315,9 +327,16 @@ class _CallLogsScreenState extends State<CallLogsScreen> {
                       : callLogs.isEmpty
                       ? const Center(child: Text("No call logs found"))
                       : ListView.builder(
+                        controller: _scrollController,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: filteredCallLogs.length,
+                        itemCount: filteredCallLogs.length + (callProvider.isFetchingMore ? 1 : 0),
                         itemBuilder: (context, index) {
+                          if (index == filteredCallLogs.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
                           final call = filteredCallLogs[index];
                           return InkWell(
                             onTap: () async {

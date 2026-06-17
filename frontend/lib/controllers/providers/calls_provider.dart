@@ -11,11 +11,20 @@ class CallsProvider with ChangeNotifier {
 
   DateTime lastStartDate = DateTime.now();
   DateTime lastEndDate = DateTime.now();
+  String _lastStatus = "All";
+  String _lastLoanType = "All";
 
-  // List<Calls> get calls => _calls;
+  int _currentPage = 1;
+  bool _hasNextPage = true;
+  bool _isFetchingMore = false;
+  int _totalFilteredCallsCount = 0;
+
   List<Calls> get filteredCalls => _filteredCalls;
   int get totalCallsCount => _totalCallsCount;
   int get todayCallsCount => _todayCallsCount;
+  bool get isFetchingMore => _isFetchingMore;
+  bool get hasNextPage => _hasNextPage;
+  int get totalFilteredCallsCount => _totalFilteredCallsCount;
 
   Future<void> addCall(Calls call) async {
     try {
@@ -95,18 +104,58 @@ class CallsProvider with ChangeNotifier {
       DateTime endDate = end ?? DateTime.now();
       endDate = endDate.add(Duration(days: 1));
 
-      _filteredCalls = await ApiService.filterCalls(
+      _currentPage = 1;
+      _hasNextPage = true;
+      _lastStatus = status;
+      _lastLoanType = loanType;
+      lastStartDate = startDate;
+      lastEndDate = endDate;
+
+      FilterCallsResponse response = await ApiService.filterCalls(
         startDate: startDate,
         endDate: endDate,
         status: status,
         loanType: loanType,
+        page: _currentPage,
+        limit: 20,
       );
-      lastStartDate = startDate;
-      lastEndDate = endDate;
+      
+      _filteredCalls = response.data;
+      _hasNextPage = response.hasNextPage;
+      _totalFilteredCallsCount = response.totalItems;
       notifyListeners();
     } catch (e) {
       print("Error filtering calls by date range: $e");
       _filteredCalls = [];
+      _hasNextPage = false;
+      _totalFilteredCallsCount = 0;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchMoreFilteredCalls() async {
+    if (!_hasNextPage || _isFetchingMore) return;
+
+    _isFetchingMore = true;
+    notifyListeners();
+
+    try {
+      _currentPage++;
+      FilterCallsResponse response = await ApiService.filterCalls(
+        startDate: lastStartDate,
+        endDate: lastEndDate,
+        status: _lastStatus,
+        loanType: _lastLoanType,
+        page: _currentPage,
+        limit: 20,
+      );
+
+      _filteredCalls.addAll(response.data);
+      _hasNextPage = response.hasNextPage;
+    } catch (e) {
+      print("Error fetching more calls: $e");
+    } finally {
+      _isFetchingMore = false;
       notifyListeners();
     }
   }

@@ -244,9 +244,9 @@ const LeadsList = () => {
       <ToastContainer position="bottom-right" />
 
       {isFormModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" onClick={handleCloseaddcallformModal}>
           {""}
-          <div className=" p-6 rounded w-1/3">
+          <div className="p-6 rounded w-11/12 md:w-1/2 lg:w-1/3 max-h-[90vh] overflow-y-auto bg-white" onClick={(e) => e.stopPropagation()}>
             <AddLead
               handleCloseaddcallformModal={handleCloseaddcallformModal}
               onCreated={() => fetchUsers(currentPage)}
@@ -481,8 +481,8 @@ const LeadsList = () => {
 
       {/* delete Confirmation Modal */}
       {showDeleteModal && selectedLead && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 animate-fadeIn">
-          <div className="bg-white p-6 rounded shadow-md w-80">
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 animate-fadeIn" onClick={() => { setShowDeleteModal(false); setSelectedLead(null); }}>
+          <div className="bg-white p-6 rounded shadow-md w-80" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h2>
             <p className="mb-4 text-gray-600">
               Are you sure you want to delete lead <strong>{selectedLead.name}</strong> (ID: {selectedLead.lead_id})?

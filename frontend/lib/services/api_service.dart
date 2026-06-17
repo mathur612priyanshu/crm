@@ -14,6 +14,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+class FilterCallsResponse {
+  final List<Calls> data;
+  final bool hasNextPage;
+  final int totalItems;
+  FilterCallsResponse({required this.data, required this.hasNextPage, required this.totalItems});
+}
+
 class ApiService {
   static String baseUrl = ServerUrl;
 
@@ -456,12 +463,13 @@ class ApiService {
       return {'total': 0, 'today': 0};
     }
   }
-
-  static Future<List<Calls>> filterCalls({
+  static Future<FilterCallsResponse> filterCalls({
     required DateTime startDate,
     required DateTime endDate,
     String? status,
     String? loanType,
+    int page = 1,
+    int limit = 20,
   }) async {
     final emp_id = await secureStorage.read(key: "userId");
     try {
@@ -474,7 +482,10 @@ class ApiService {
 
       final uri = Uri.parse(
         "$baseUrl/filterCalls/${emp_id}",
-      ).replace(queryParameters: queryParameters);
+      ).replace(queryParameters: queryParameters..addAll({
+        "page": page.toString(),
+        "limit": limit.toString()
+      }));
 
       final response = await http.get(
         uri,
@@ -484,18 +495,30 @@ class ApiService {
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         List<dynamic> jsonData = [];
-        if (decoded is List) {
+        bool hasNextPage = false;
+        int totalItems = 0;
+        
+        if (decoded is Map) {
+          if (decoded['data'] is List) {
+            jsonData = decoded['data'];
+          }
+          if (decoded['pagination'] is Map) {
+            hasNextPage = decoded['pagination']['hasNextPage'] ?? false;
+            totalItems = decoded['pagination']['totalItems'] ?? 0;
+          }
+        } else if (decoded is List) {
           jsonData = decoded;
-        } else if (decoded is Map && decoded['data'] is List) {
-          jsonData = decoded['data'];
+          totalItems = jsonData.length;
         }
-        return jsonData.map((e) => Calls.fromJson(e)).toList();
+
+        final calls = jsonData.map((e) => Calls.fromJson(e)).toList();
+        return FilterCallsResponse(data: calls, hasNextPage: hasNextPage, totalItems: totalItems);
       } else {
         throw Exception("Failed to load filtered calls");
       }
     } catch (e) {
       print("Error in filterCalls API: $e");
-      return [];
+      return FilterCallsResponse(data: [], hasNextPage: false, totalItems: 0);
     }
   }
 

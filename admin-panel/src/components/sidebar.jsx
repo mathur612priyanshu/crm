@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -100,19 +100,30 @@ const Sidebar = () => {
   };
 
   return (
-    <nav className="bg-[#1e293b] text-white h-screen fixed top-0 left-0 min-w-[250px] py-6 px-4 font-[sans-serif] shadow-lg z-40">
-      <div className="relative">
-        <div className="w-full flex items-center justify-center mb-8">
-          <Link to={employeeRole === "operations" ? "/operations" : "/"}>
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
+          onClick={() => setIsOpen && setIsOpen(false)}
+        />
+      )}
+      
+      <nav 
+        className={`bg-[#1e293b] text-white h-screen fixed top-0 left-0 min-w-[250px] w-64 font-[sans-serif] shadow-lg z-50 flex flex-col transform transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
+        `}
+      >
+        <div className="w-full flex items-center justify-center py-6 px-4 shrink-0">
+          <Link to={employeeRole === "operations" ? "/operations" : "/"} onClick={() => setIsOpen && setIsOpen(false)}>
             <div className="flex items-center justify-center bg-white p-2 rounded-lg">
               <img src="/logo.png" alt="logo" className="w-[160px] object-contain" />
             </div>
           </Link>
         </div>
-      </div>
 
-      <div className="overflow-auto py-4 h-full">
-        <ul className="space-y-2">
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <ul className="space-y-2">
           {navItems.map(({ path, label, icon }) => (
             <li key={path}>
               {path === "/logout" ? (
@@ -127,11 +138,12 @@ const Sidebar = () => {
               ) : (
                 <Link
                   to={path}
-                className={`flex items-center rounded-lg px-4 py-3 transition-all ${
-                  isActive(path)
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-blue-100 hover:bg-blue-700 hover:text-white"
-                }`}
+                  onClick={() => setIsOpen && setIsOpen(false)}
+                  className={`flex items-center rounded-lg px-4 py-3 transition-all ${
+                    isActive(path)
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "text-blue-100 hover:bg-blue-700 hover:text-white"
+                  }`}
                 >
                   {getIcon(icon)}
                   <span className="text-sm font-medium">{label}</span>
@@ -140,23 +152,24 @@ const Sidebar = () => {
             </li>
           ))}
         </ul>
+        </div>
 
         {/* 👇 Bottom profile section (dynamic) */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
+        <div className="p-4 border-t border-blue-800 shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
               <span className="text-white font-medium">
                 {name.slice(0, 2).toUpperCase()}
               </span>
             </div>
-            <div>
-              <p className="text-sm font-medium text-white">{name}</p>
-              <p className="text-xs text-blue-200">{email}</p>
+            <div className="overflow-hidden">
+              <p className="text-sm font-medium text-white truncate">{name}</p>
+              <p className="text-xs text-blue-200 truncate">{email}</p>
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 

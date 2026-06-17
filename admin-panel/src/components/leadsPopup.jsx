@@ -85,8 +85,8 @@ const LeadsPopup = ({ isOpen, onClose, title, startDate, endDate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-lg p-6 w-[95%] max-w-4xl max-h-[90%] overflow-y-auto relative flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-lg p-6 w-[95%] max-w-4xl max-h-[90%] overflow-y-auto relative flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Close (X) Button */}
         <button
           className="absolute top-4 right-6 text-2xl font-bold text-gray-500 hover:text-red-500"

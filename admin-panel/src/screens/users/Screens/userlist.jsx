@@ -126,9 +126,9 @@ const UserList = () => {
       <ToastContainer position="bottom-right" />
 
       {isFormModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" onClick={handleCloseaddcallformModal}>
           {" "}
-          <div className=" p-6 rounded w-1/3">
+          <div className="p-6 rounded w-11/12 md:w-1/2 lg:w-1/3 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <AddUser
                 handleCloseaddcallformModal={handleCloseaddcallformModal}
                 onCreated={() => fetchUsers(currentPage, searchTerm)}
@@ -137,9 +137,9 @@ const UserList = () => {
         </div>
       )}
       {isExcelModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" onClick={handleCloseaddcallExcelModal}>
           {" "}
-          <div className=" p-6 rounded w-1/3">
+          <div className="p-6 rounded w-11/12 md:w-1/2 lg:w-1/3 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <AddUserExcel
               handleCloseaddcallExcelModal={handleCloseaddcallExcelModal}
             />
@@ -300,8 +300,8 @@ const UserList = () => {
 
       {/* delete Confirmation Modal */}
       {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded shadow-md w-80">
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white p-6 rounded shadow-md w-80" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
             <p className="mb-4">Are you sure you want to delete <strong>{selectedUser.ename}</strong>?</p>
             <div className="flex justify-end gap-3">
@@ -326,8 +326,8 @@ const UserList = () => {
       )}
       {/* Edit User Modal */}
       {showEditModal && selectedUser && (
-  <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-6 rounded shadow-md w-96 max-h-[90vh] overflow-y-auto">
+  <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50" onClick={() => setShowEditModal(false)}>
+    <div className="bg-white p-6 rounded shadow-md w-96 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
       <h2 className="text-lg font-semibold mb-4">Update User</h2>
       <form
         onSubmit={(e) => {

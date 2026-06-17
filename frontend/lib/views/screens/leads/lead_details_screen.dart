@@ -111,21 +111,21 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen>
       isFloatingActionButton: true,
       floatingActionButtonIcon: Icon(Icons.add),
       floatingActionButtonOnTap: () {
-        if (_tabController.index == 2) {
+        // if (_tabController.index == 2) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => AddTaskScreen(lead: widget.lead),
             ),
           );
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CallDetailsScreen(lead: widget.lead),
-            ),
-          );
-        }
+        // } else {
+        //   Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (context) => CallDetailsScreen(lead: widget.lead),
+        //     ),
+        //   );
+        // }
       },
       appBar: AppBar(
         elevation: 0,

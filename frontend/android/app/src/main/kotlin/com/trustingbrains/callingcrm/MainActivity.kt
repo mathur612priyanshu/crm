@@ -44,16 +44,13 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun shareTextToWhatsApp(message: String, phone: String) {
-        val intent = Intent(Intent.ACTION_SEND)
-        intent.type = "text/plain"
-        intent.putExtra(Intent.EXTRA_TEXT, message)
-        if (phone.isNotEmpty()) {
-            var formattedPhone = phone.replace("+", "").replace(" ", "").replace("-", "")
-            if (formattedPhone.length == 10) {
-                formattedPhone = "91$formattedPhone"
-            }
-            intent.putExtra("jid", "$formattedPhone@s.whatsapp.net")
+        var formattedPhone = phone.replace("+", "").replace(" ", "").replace("-", "")
+        if (formattedPhone.length == 10) {
+            formattedPhone = "91$formattedPhone"
         }
+
+        val url = "https://api.whatsapp.com/send?phone=$formattedPhone&text=${Uri.encode(message)}"
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         intent.setPackage("com.whatsapp")
         
         try {

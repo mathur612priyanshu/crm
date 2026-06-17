@@ -216,7 +216,7 @@ const UserList = () => {
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800">{user.email}</td>
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800">{user.phone}</td>
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800 capitalize">
-                  {user.role || "calling"}
+                  {user.role === 'calling' || !user.role ? "Sales Manager" : user.role}
                 </td>
                 <td onClick={() => navigate(`/userdetail/${user.emp_id}`)} className="p-4 text-[15px] text-gray-800 capitalize">
                   {user.status || "active"}
@@ -394,7 +394,7 @@ const UserList = () => {
             onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}
             className="w-full border px-3 py-2 rounded"
           >
-            <option value="calling">Calling Employee</option>
+            <option value="calling">Sales Manager</option>
             <option value="manager">Manager</option>
             <option value="operations">Operations Employee</option>
           </select>

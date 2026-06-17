@@ -21,7 +21,7 @@ function Login() {
 
       if (!canAccessAdminPanel || role === "calling") {
         localStorage.clear();
-        alert("Calling employees cannot access the admin panel.");
+        alert("Sales Managers cannot access the admin panel.");
         return;
       }
 

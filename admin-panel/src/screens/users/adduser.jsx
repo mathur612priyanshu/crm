@@ -153,7 +153,7 @@ const AddUser = ({ handleCloseaddcallformModal, onCreated }) => {
               onChange={handleChange}
               className="w-full text-gray-800 text-sm border border-gray-300 px-4 py-3 rounded-md outline-blue-600"
             >
-              <option value="calling">Calling Employee</option>
+              <option value="calling">Sales Manager</option>
               <option value="manager">Manager</option>
               <option value="operations">Operations Employee</option>
             </select>

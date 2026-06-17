@@ -166,7 +166,7 @@ const UserDetailScreen = () => {
             </div>
             <div>
               <p className="text-gray-600">Role</p>
-              <p className="font-medium capitalize">{employee.role || "calling"}</p>
+              <p className="font-medium capitalize">{employee.role === 'calling' || !employee.role ? "Sales Manager" : employee.role}</p>
             </div>
             <div>
               <p className="text-gray-600">Status</p>

@@ -93,7 +93,7 @@ function LeadStatusesScreen() {
             onChange={handleChange}
             className="border rounded px-3 py-2 text-sm"
           >
-            <option value="calling">Calling Team</option>
+            <option value="calling">Sales Team</option>
             <option value="operations">Operations Team</option>
             <option value="both">Both Teams</option>
           </select>
@@ -150,7 +150,7 @@ function LeadStatusesScreen() {
             {statuses.map((status) => (
               <tr key={status.status_id} className="border-t">
                 <td className="p-3 text-sm text-gray-800">{status.name}</td>
-                <td className="p-3 text-sm text-gray-800 capitalize">{status.team}</td>
+                <td className="p-3 text-sm text-gray-800 capitalize">{status.team === 'calling' ? 'Sales Team' : status.team}</td>
                 <td className="p-3 text-sm text-gray-600">
                   {status.is_initial && <span className="mr-2">Initial</span>}
                   {status.is_file_login && <span className="mr-2">File Login</span>}

@@ -148,6 +148,13 @@ exports.addLead = async (req, res) => {
     return res.status(400).json({ message: 'Name and number are required' });
   }
 
+  // 🛠️ Sanitize phone number to keep only the last 10 digits
+  let cleanNumber = String(number).replace(/\D/g, '');
+  if (cleanNumber.length >= 10) {
+    cleanNumber = cleanNumber.slice(-10);
+  }
+  req.body.number = cleanNumber;
+
   try {
     const requestedStatus = await resolveLeadStatus(req.body);
     const leadStatus = requestedStatus || (await getInitialLeadStatus());
@@ -217,6 +224,12 @@ exports.importLeadsFromExcel = async (req, res) => {
       // 🔁 Skip if name or number missing
       if (!name || !number) continue;
 
+      // 🛠️ Sanitize phone number to keep only the last 10 digits
+      let cleanNumber = String(number).replace(/\D/g, '');
+      if (cleanNumber.length >= 10) {
+        cleanNumber = cleanNumber.slice(-10);
+      }
+
       // 🛠️ Manually add +1 day to dates if valid
       // let dobDate = null;
       // if (dob instanceof Date && !isNaN(dob)) {
@@ -233,7 +246,7 @@ exports.importLeadsFromExcel = async (req, res) => {
       try {
         const newLead = await Lead.create({
           name,
-          number,
+          number: cleanNumber,
           email,
           // dob: dobDate,
           source: source || 'Bulk excel',

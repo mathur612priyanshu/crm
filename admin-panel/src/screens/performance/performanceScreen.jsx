@@ -171,9 +171,10 @@ const PerformanceScreen = () => {
       }
       
       const params = { 
-        startDate: fromDate,
-        endDate: toDate,
-        userId : employee.emp_id
+        startDate: fromDate ? moment(fromDate).startOf('day').toISOString() : '',
+        endDate: toDate ? moment(toDate).endOf('day').toISOString() : '',
+        userId : employee.emp_id,
+        limit: 100000
       };
 
       const [callsRes, tasksRes, leadsRes, attendanceRes] = await Promise.all([
@@ -182,16 +183,16 @@ const PerformanceScreen = () => {
         
         axios.get(`${API_URL}/getLeadsByEmpIdAndDate/${employee.emp_id}`, { params }),
 
-        axios.get(`${API_URL}/monthlyattendance/2025-01`, { params }),
+        axios.get(`${API_URL}/monthlyattendance/${fromDate ? fromDate.substring(0, 7) : '2025-01'}`, { params }),
       ]);
 
-      setCalls(callsRes.data);
-      setTasks(tasksRes.data.tasks);
+      setCalls(callsRes.data.data || []);
+      setTasks(tasksRes.data.tasks || []);
       
-      setLeads(leadsRes.data);
+      setLeads(leadsRes.data.data || []);
       console.log("asdfghjsdfghjkdfghj");
       console.log("dfghjklxcvbnm,zxcvbnm,",attendanceRes);
-      setAttendance(attendanceRes.data.attendance);
+      setAttendance(attendanceRes.data.data || []);
 
       setLoading(false);
     } catch (error) {

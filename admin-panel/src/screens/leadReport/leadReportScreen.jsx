@@ -71,27 +71,27 @@ const LeadsReport = () => {
 
   // Fetch leads data
   useEffect(() => {
-    if (selectedEmpId) {
-      const fetchData = async () => {
-        setLoading(true);
-        const params = { 
-          emp_id: selectedEmpId,
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate,
-          status: selectedStatus === "All" ? "" : selectedStatus
-        };
-        try {
-          const leadResponse = await axios.get(`${API_URL}/getFilteredLeads`, { params });
-          setLeadsData(leadResponse.data.leads);
-          setCurrentPage(1); // Reset to first page when new data is fetched
-        } catch (error) {
-          console.error("Error fetching data", error);
-        } finally {
-          setLoading(false);
-        }
+    const fetchData = async () => {
+      setLoading(true);
+      const params = { 
+        emp_id: selectedEmpId,
+        startDate: dateRange.startDate ? moment(dateRange.startDate).startOf('day').toISOString() : '',
+        endDate: dateRange.endDate ? moment(dateRange.endDate).endOf('day').toISOString() : '',
+        status: selectedStatus === "All" ? "" : selectedStatus,
+        limit: 100000
       };
-      fetchData();
-    }    
+      try {
+        const leadResponse = await axios.get(`${API_URL}/getFilteredLeads`, { params });
+        setLeadsData(leadResponse.data.data || []);
+        setCurrentPage(1); // Reset to first page when new data is fetched
+      } catch (error) {
+        console.error("Error fetching data", error);
+        setLeadsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [selectedEmpId, dateRange, selectedStatus]);
 
   // Filter leads based on search term

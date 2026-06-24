@@ -18,6 +18,24 @@ const UserList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferTargetId, setTransferTargetId] = useState("");
+  const [allEmployees, setAllEmployees] = useState([]);
+
+  const fetchAllEmployees = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/employees?limit=10000`);
+      if (response.data.message === "success") {
+        setAllEmployees(response.data.employees);
+      }
+    } catch (error) {
+      console.error("Error fetching all employees:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllEmployees();
+  }, []);
 
   const itemsPerPage = 50;
   const navigate = useNavigate();
@@ -79,6 +97,27 @@ const UserList = () => {
       toast.error("Error updating user. Please try again.");
     }
   }
+
+  const handleTransferLeads = async () => {
+    if (!transferTargetId) {
+      toast.error("Please select a target employee.");
+      return;
+    }
+    const targetEmp = allEmployees.find(e => e.emp_id === transferTargetId);
+    try {
+      const response = await axios.post(`${API_URL}/reassignLeadsBulk`, {
+        from_emp_id: selectedUser.emp_id,
+        to_emp_id: transferTargetId,
+        to_owner_name: targetEmp.ename
+      });
+      toast.success(response.data.message || "Leads transferred successfully!");
+      setShowTransferModal(false);
+      setTransferTargetId("");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to transfer leads.");
+    }
+  };
 
   // const users = [
   //   {
@@ -267,6 +306,22 @@ const UserList = () => {
                       />
                     </svg>
                   </button>
+                  <button
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setShowTransferModal(true);
+                    }}
+                    title="Transfer Leads"
+                    className="ml-4"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 fill-green-500 hover:fill-green-700"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M16 11V7l5 5-5 5v-4H4v-2h12zm-8 4v4l-5-5 5-5v4h12v2H8z" />
+                    </svg>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -324,6 +379,47 @@ const UserList = () => {
           </div>
         </div>
       )}
+
+      {showTransferModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-96 max-w-full">
+            <h3 className="text-lg font-semibold mb-4">Transfer Leads</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Transfer all leads from <span className="font-bold">{selectedUser?.ename}</span> to:
+            </p>
+            <select
+              value={transferTargetId}
+              onChange={(e) => setTransferTargetId(e.target.value)}
+              className="w-full border p-2 rounded mb-4"
+            >
+              <option value="" disabled>Select Target Employee</option>
+              {allEmployees.map(emp => (
+                <option key={emp.emp_id} value={emp.emp_id}>
+                  {emp.emp_id} - {emp.ename}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setShowTransferModal(false);
+                  setTransferTargetId("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={handleTransferLeads}
+              >
+                Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit User Modal */}
       {showEditModal && selectedUser && (
   <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50" onClick={() => setShowEditModal(false)}>

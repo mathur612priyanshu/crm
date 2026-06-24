@@ -370,22 +370,19 @@ const LeadsList = () => {
                   {user.status || "--"}
                 </td>
                 <td className="p-4 text-[15px] text-gray-800" onClick={e => e.stopPropagation()}>
-                  {user.owner ? (
-                    user.owner
-                  ) : (
-                    <select
-                      value={user.person_id || ""}
-                      onChange={e => handleAssignPerson(user.lead_id, e.target.value)}
-                      className="border px-2 py-1 rounded text-sm"
-                    >
-                      <option value="" disabled>Select Employee</option>
-                      {employees.map((emp) => (
-                        <option key={emp.emp_id} value={`${emp.emp_id}|${emp.ename}`}>
-                          {emp.emp_id} ─ {emp.ename}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    value={user.person_id ? `${user.person_id}|${user.owner}` : ""}
+                    onChange={e => handleAssignPerson(user.lead_id, e.target.value)}
+                    className="border px-2 py-1 rounded text-sm bg-white"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <option value="" disabled>Select Employee</option>
+                    {employees.map((emp) => (
+                      <option key={emp.emp_id} value={`${emp.emp_id}|${emp.ename}`}>
+                        {emp.emp_id} ─ {emp.ename}
+                      </option>
+                    ))}
+                  </select>
                 </td>
 
                 <td className="p-4">

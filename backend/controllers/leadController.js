@@ -1286,3 +1286,27 @@ exports.getFollowupsPaginated = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };
+
+exports.reassignLeadsBulk = async (req, res) => {
+  const { from_emp_id, to_emp_id, to_owner_name } = req.body;
+
+  if (!from_emp_id || !to_emp_id || !to_owner_name) {
+    return res.status(400).json({ message: 'from_emp_id, to_emp_id, and to_owner_name are required' });
+  }
+
+  try {
+    const [updatedCount] = await Lead.update(
+      { person_id: to_emp_id, owner: to_owner_name },
+      { where: { person_id: from_emp_id } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully reassigned ${updatedCount} leads.`,
+      updatedCount
+    });
+  } catch (error) {
+    console.error('Error in reassignLeadsBulk:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};

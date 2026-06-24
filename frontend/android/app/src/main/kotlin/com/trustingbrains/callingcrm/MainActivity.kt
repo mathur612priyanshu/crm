@@ -51,12 +51,12 @@ class MainActivity : FlutterActivity() {
 
         val url = "https://api.whatsapp.com/send?phone=$formattedPhone&text=${Uri.encode(message)}"
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        intent.setPackage("com.whatsapp")
+        intent.setPackage("com.whatsapp.w4b")
         
         try {
             startActivity(intent)
         } catch (e: Exception) {
-            intent.setPackage("com.whatsapp.w4b")
+            intent.setPackage("com.whatsapp")
             try {
                 startActivity(intent)
             } catch (ex: Exception) {
@@ -94,7 +94,7 @@ class MainActivity : FlutterActivity() {
             }
             intent.putExtra("jid", "$formattedPhone@s.whatsapp.net")
         }
-                        intent.setPackage("com.whatsapp")
+                        intent.setPackage("com.whatsapp.w4b")
                         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
                         // Start activity on main thread
@@ -102,7 +102,7 @@ class MainActivity : FlutterActivity() {
                             try {
                                 startActivity(intent)
                             } catch (e: Exception) {
-                                intent.setPackage("com.whatsapp.w4b")
+                                intent.setPackage("com.whatsapp")
                                 try {
                                     startActivity(intent)
                                 } catch (ex: Exception) {

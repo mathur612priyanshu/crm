@@ -317,3 +317,87 @@ exports.deleteEmployee = async (req, res) => {
     return res.status(500).json({ message: "Database error", error });
   }
 }
+
+const fs = require('fs');
+const path = require('path');
+
+exports.uploadEmployeeDocuments = async (req, res) => {
+  try {
+    const empId = req.params.id;
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const employee = await Employee.findByPk(empId);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    let existingDocs = employee.documents || [];
+    let nextDocNum = existingDocs.length + 1;
+
+    const newDocs = files.map(file => {
+      const docName = `document${nextDocNum++}`;
+      return {
+        name: docName,
+        originalName: file.originalname,
+        url: `/uploads/employee_documents/${empId}/${file.filename}`,
+        fileName: file.filename
+      };
+    });
+
+    const updatedDocs = [...existingDocs, ...newDocs];
+    employee.documents = updatedDocs;
+    await employee.save();
+
+    res.status(200).json({
+      message: "Documents uploaded successfully",
+      documents: updatedDocs
+    });
+
+  } catch (error) {
+    console.error("Error uploading documents:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+exports.deleteEmployeeDocument = async (req, res) => {
+  try {
+    const empId = req.params.id;
+    const docName = req.params.docName; // e.g., document1
+
+    const employee = await Employee.findByPk(empId);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    let docs = employee.documents || [];
+    const docToDelete = docs.find(d => d.name === docName);
+
+    if (!docToDelete) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Delete file from disk
+    const filePath = path.join(__dirname, "../uploads/employee_documents", empId, docToDelete.fileName);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Remove from array and save
+    docs = docs.filter(d => d.name !== docName);
+    employee.documents = docs;
+    await employee.save();
+
+    res.status(200).json({
+      message: "Document deleted successfully",
+      documents: docs
+    });
+
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

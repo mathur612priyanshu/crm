@@ -51,6 +51,11 @@ const Employee = sequelize.define(
       allowNull: false,
       defaultValue: EMPLOYEE_STATUSES.ACTIVE,
     },
+    documents: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
   },
   {
     tableName: "employees",
@@ -58,7 +63,7 @@ const Employee = sequelize.define(
   }
 );
 
-Employee.sync({ alter: false })
+Employee.sync({ alter: true })
 
   .then(() => {
     console.log("Employee table created");

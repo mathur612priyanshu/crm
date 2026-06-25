@@ -42,48 +42,31 @@ const PerformanceScreen = () => {
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [calls, setCalls] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [leads, setLeads] = useState([]);
+  const [calls, setCalls] = useState([]); // Kept for state shape but not used for aggregate
+  const [reportStats, setReportStats] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCallId, setExpandedCallId] = useState(null);
 
-  // Calculate stats
-  const totalCalls = calls.length;
-  const totalTasks = tasks.length;
-  const totalAttendance = attendance.length;
+  // Use reportStats from backend
+  const totalCalls = reportStats?.totalCalls || 0;
+  const totalTasks = reportStats?.totalTasks || 0;
+  const totalAttendance = reportStats?.totalAttendance || 0;
+  const totalLeads = reportStats?.totalLeads || 0;
 
   // Task status counts
-  const initialTasks = tasks.filter(task => task.status === 'Initial').length;
-  const onGoingTasks = tasks.filter(task => task.status === 'On Going').length;
-  const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+  const tasksCounts = reportStats?.tasksStatusCounts || {};
+  const initialTasks = tasksCounts['Initial'] || 0;
+  const onGoingTasks = tasksCounts['On Going'] || 0;
+  const completedTasks = tasksCounts['Completed'] || 0;
 
   // Attendance status counts
-  const fullAttendance = attendance.filter(a => a.isLate === false).length;
-  const lateAttendance = attendance.filter(a => a.isLate === true).length;
+  const fullAttendance = reportStats?.fullAttendance || 0;
+  const lateAttendance = reportStats?.lateAttendance || 0;
 
-  // Lead status counts - dynamic based on backend statuses
-  const leadStatusCounts = {};
-  statuses.forEach(status => {
-    leadStatusCounts[status.name] = leads.filter(lead => lead.status === status.name).length;
-  });
+  // Lead status counts
+  const leadStatusCounts = reportStats?.leadStatusCounts || {};
 
   const activeStatusName = statuses.length > 1 ? statuses[1].name : (statuses.length > 0 ? statuses[0].name : "Interested");
   const interestedCount = leadStatusCounts[activeStatusName] || 0;
-
-  // Loan type counts
-  const homeLoanLeads = leads.filter(lead => lead.loan_type === 'Home Loan');
-  const mortgageLoanLeads = leads.filter(lead => lead.loan_type === 'Mortgage Loan');
-  const userCarLoanLeads = leads.filter(lead => lead.loan_type === 'User Car Loan');
-  const businessLoanLeads = leads.filter(lead => lead.loan_type === 'Business Loan');
-  const personalLoanLeads = leads.filter(lead => lead.loan_type === 'Personal Loan');
-  const dodLoanLeads = leads.filter(lead => lead.loan_type === 'DOD');
-  const ccOdLeads = leads.filter(lead => lead.loan_type === 'CC/OD');
-  const cgtmsmeLeads = leads.filter(lead => lead.loan_type === 'CGTMSME');
-  const mutualFundLeads = leads.filter(lead => lead.loan_type === 'Mutual Fund');
-  const insuranceLeads = leads.filter(lead => lead.loan_type === 'Insurance');
-  const otherLeads = leads.filter(lead => lead.loan_type === 'Other');
 
   // Data for charts
   const taskStatusData = [
@@ -110,18 +93,19 @@ const PerformanceScreen = () => {
     };
   });
 
+  const backendLoanCounts = reportStats?.loanTypeCounts || {};
   const loanTypeData = [
-    { name: 'Home Loans', value: homeLoanLeads.length, color: '#3b82f6' },
-    { name: 'User Car Loans', value: userCarLoanLeads.length, color: '#f97316' },
-    { name: 'Business Loans', value: businessLoanLeads.length, color: '#f59e0b' },
-    { name: 'Personal Loans', value: personalLoanLeads.length, color: '#10b981' },
-    { name: 'DOD Loans', value: dodLoanLeads.length, color: '#f43f5e' },
-    { name: 'Mortgage Loans', value: mortgageLoanLeads.length, color: '#8b5cf6' },
-    { name: 'CC/OD', value: ccOdLeads.length, color: '#4ade80' },
-    { name: 'CGTMSME', value: cgtmsmeLeads.length, color: '#a78bfa' },
-    { name: 'Mutual Fund', value: mutualFundLeads.length, color: '#8b5cf6' },
-    { name: 'Insurance', value: insuranceLeads.length, color: '#ec4899' },
-    { name: 'Other', value: otherLeads.length, color: '#f43f5e' }
+    { name: 'Home Loans', value: backendLoanCounts['Home Loan'] || 0, color: '#3b82f6' },
+    { name: 'User Car Loans', value: backendLoanCounts['User Car Loan'] || 0, color: '#f97316' },
+    { name: 'Business Loans', value: backendLoanCounts['Business Loan'] || 0, color: '#f59e0b' },
+    { name: 'Personal Loans', value: backendLoanCounts['Personal Loan'] || 0, color: '#10b981' },
+    { name: 'DOD Loans', value: backendLoanCounts['DOD'] || 0, color: '#f43f5e' },
+    { name: 'Mortgage Loans', value: backendLoanCounts['Mortgage Loan'] || 0, color: '#8b5cf6' },
+    { name: 'CC/OD', value: backendLoanCounts['CC/OD'] || 0, color: '#4ade80' },
+    { name: 'CGTMSME', value: backendLoanCounts['CGTMSME'] || 0, color: '#a78bfa' },
+    { name: 'Mutual Fund', value: backendLoanCounts['Mutual Fund'] || 0, color: '#8b5cf6' },
+    { name: 'Insurance', value: backendLoanCounts['Insurance'] || 0, color: '#ec4899' },
+    { name: 'Other', value: backendLoanCounts['Other'] || 0, color: '#f43f5e' }
   ];
 
   // Fetch all employees on component mount
@@ -174,28 +158,10 @@ const PerformanceScreen = () => {
         startDate: fromDate ? moment(fromDate).startOf('day').toISOString() : '',
         endDate: toDate ? moment(toDate).endOf('day').toISOString() : '',
         userId : employee.emp_id,
-        limit: 100000
       };
 
-      const results = await Promise.allSettled([
-        axios.get(`${API_URL}/filterCalls/${employee.emp_id}`, { params }),
-        axios.get(`${API_URL}/task/${employee.emp_id}`, { params }),
-        
-        axios.get(`${API_URL}/getLeadsByEmpIdAndDate/${employee.emp_id}`, { params }),
-
-        axios.get(`${API_URL}/monthlyattendance/${fromDate ? fromDate.substring(0, 7) : moment().format('YYYY-MM')}`, { 
-          params: { ...params, startDate: fromDate, endDate: toDate } 
-        }),
-      ]);
-
-      const [callsRes, tasksRes, leadsRes, attendanceRes] = results;
-
-      setCalls(callsRes.status === 'fulfilled' ? (callsRes.value.data.data || []) : []);
-      setTasks(tasksRes.status === 'fulfilled' ? (tasksRes.value.data.tasks || []) : []);
-      
-      setLeads(leadsRes.status === 'fulfilled' ? (leadsRes.value.data.data || []) : []);
-      setAttendance(attendanceRes.status === 'fulfilled' ? (attendanceRes.value.data.data || []) : []);
-
+      const response = await axios.get(`${API_URL}/performanceStats`, { params });
+      setReportStats(response.data.data);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching performance data", error);
@@ -294,25 +260,22 @@ const renderBarChart = (data, title, dataKey = "value") => {
   );
 };
 
-  const callsPerDay = calls.reduce((acc, call) => {
-    const date = moment(call.createdAt).format("YYYY-MM-DD");
-    acc[date] = (acc[date] || 0) + 1;
-    return acc;
-  }, {});
-
-  // 🔥 2. Find min & max date from calls
-  const dates = calls.map(call => moment(call.createdAt));
-  const minDate = moment.min(dates);
-  const maxDate = moment.max(dates);
+  const callsPerDay = reportStats?.callsPerDay || {};
 
   // 🔥 3. Fill all dates (even with 0 calls)
   const chartData = [];
-  for (let m = minDate.clone(); m.diff(maxDate) <= 0; m.add(1, "day")) {
-    const dateStr = m.format("YYYY-MM-DD");
-    chartData.push({
-      date: dateStr,
-      calls: callsPerDay[dateStr] || 0,
-    });
+  if (Object.keys(callsPerDay).length > 0) {
+    const dates = Object.keys(callsPerDay).map(d => moment(d)).filter(d => d.isValid());
+    const minDate = moment.min(dates);
+    const maxDate = moment.max(dates);
+
+    for (let m = minDate.clone(); m.isSameOrBefore(maxDate, 'day'); m.add(1, "day")) {
+      const dateStr = m.format("YYYY-MM-DD");
+      chartData.push({
+        date: dateStr,
+        calls: callsPerDay[dateStr] || 0,
+      });
+    }
   }
 
   if (loading) {
@@ -429,7 +392,7 @@ const renderBarChart = (data, title, dataKey = "value") => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-indigo-600">Total Leads</p>
-                    <p className="text-2xl font-bold text-indigo-800">{leads.length}</p>
+                    <p className="text-2xl font-bold text-indigo-800">{totalLeads}</p>
                     <p className="text-xs text-indigo-500 mt-1">{interestedCount} {activeStatusName.toLowerCase()}</p>
                   </div>
                   <div className="bg-indigo-100 p-3 rounded-full">

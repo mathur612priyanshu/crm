@@ -29,10 +29,13 @@ const LeadsReport = () => {
     endDate: ''
   });
   const [leadsData, setLeadsData] = useState([]);
+  const [reportStats, setReportStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [allEmployees, setAllEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalLeadsCount, setTotalLeadsCount] = useState(0);
   const leadsPerPage = 10;
 
   const statusList = getStatusNamesWithAll();
@@ -69,7 +72,7 @@ const LeadsReport = () => {
     fetchAllEmployees();
   }, []);
 
-  // Fetch leads data
+  // Fetch leads data and stats
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -78,24 +81,44 @@ const LeadsReport = () => {
         startDate: dateRange.startDate ? moment(dateRange.startDate).startOf('day').toISOString() : '',
         endDate: dateRange.endDate ? moment(dateRange.endDate).endOf('day').toISOString() : '',
         status: selectedStatus === "All" ? "" : selectedStatus,
-        limit: 100000
+        limit: leadsPerPage,
+        page: currentPage,
       };
+
+      const statsParams = {
+        emp_id: selectedEmpId,
+        startDate: dateRange.startDate ? moment(dateRange.startDate).startOf('day').toISOString() : '',
+        endDate: dateRange.endDate ? moment(dateRange.endDate).endOf('day').toISOString() : '',
+        status: selectedStatus === "All" ? "" : selectedStatus,
+      };
+
       try {
-        const leadResponse = await axios.get(`${API_URL}/getFilteredLeads`, { params });
+        const [leadResponse, statsResponse] = await Promise.all([
+          axios.get(`${API_URL}/getFilteredLeads`, { params }),
+          axios.get(`${API_URL}/leadReportStats`, { params: statsParams })
+        ]);
+        
         setLeadsData(leadResponse.data.data || []);
-        setCurrentPage(1); // Reset to first page when new data is fetched
+        if (leadResponse.data.pagination) {
+          setTotalPages(leadResponse.data.pagination.totalPages || 1);
+          setTotalLeadsCount(leadResponse.data.pagination.totalItems || 0);
+        }
+        
+        setReportStats(statsResponse.data.data);
       } catch (error) {
         console.error("Error fetching data", error);
         setLeadsData([]);
+        setReportStats(null);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [selectedEmpId, dateRange, selectedStatus]);
+  }, [selectedEmpId, dateRange, selectedStatus, currentPage]);
 
-  // Filter leads based on search term
+  // Filter leads based on search term for current page leads (Note: full text search requires backend support, so we only filter current page or rely on backend search if implemented)
   const filteredLeads = leadsData.filter(lead => {
+    if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
       lead.name?.toLowerCase().includes(searchLower) ||
@@ -106,17 +129,10 @@ const LeadsReport = () => {
     );
   });
 
-  // Calculate pagination
-  const indexOfLastLead = currentPage * leadsPerPage;
-  const indexOfFirstLead = indexOfLastLead - leadsPerPage;
-  const currentLeads = filteredLeads.slice(indexOfFirstLead, indexOfLastLead);
-  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
+  const currentLeads = filteredLeads;
 
   // Lead status counts - dynamic based on backend statuses
-  const leadStatusCounts = {};
-  statuses.forEach(status => {
-    leadStatusCounts[status.name] = leadsData.filter(lead => lead.status === status.name).length;
-  });
+  const leadStatusCounts = reportStats?.leadStatusCounts || {};
 
   const leadStatusData = statuses.map((status, index) => ({
     name: status.name,
@@ -153,50 +169,38 @@ const LeadsReport = () => {
   }
 
   // Loan type counts
-  const homeLoanLeads = leadsData.filter(lead => lead.loan_type === 'Home Loan');
-  const mortgageLoanLeads = leadsData.filter(lead => lead.loan_type === 'Mortgage Loan');
-  const userCarLoanLeads = leadsData.filter(lead => lead.loan_type === 'User Car Loan');
-  const businessLoanLeads = leadsData.filter(lead => lead.loan_type === 'Business Loan');
-  const personalLoanLeads = leadsData.filter(lead => lead.loan_type === 'Personal Loan');
-  const dodLoanLeads = leadsData.filter(lead => lead.loan_type === 'DOD');
-  const ccOdLeads = leadsData.filter(lead => lead.loan_type === 'CC/OD');
-  const cgtmsmeLeads = leadsData.filter(lead => lead.loan_type === 'CGTMSME');
-  const mutualFundLeads = leadsData.filter(lead => lead.loan_type === 'Mutual Fund');
-  const insuranceLeads = leadsData.filter(lead => lead.loan_type === 'Insurance');
-  const otherLeads = leadsData.filter(lead => lead.loan_type === 'Other');
-
+  const backendLoanCounts = reportStats?.loanTypeCounts || {};
+  
   const loanTypeData = [
-    { name: 'Home Loans', value: homeLoanLeads.length, color: '#3b82f6' },
-    { name: 'User Car Loans', value: userCarLoanLeads.length, color: '#f97316' },
-    { name: 'Business Loans', value: businessLoanLeads.length, color: '#f59e0b' },
-    { name: 'Personal Loans', value: personalLoanLeads.length, color: '#10b981' },
-    { name: 'DOD Loans', value: dodLoanLeads.length, color: '#f43f5e' },
-    { name: 'Mortgage Loans', value: mortgageLoanLeads.length, color: '#8b5cf6' },
-    { name: 'CC/OD', value: ccOdLeads.length, color: '#4ade80' },
-    { name: 'CGTMSME', value: cgtmsmeLeads.length, color: '#a78bfa' },
-    { name: 'Mutual Fund', value: mutualFundLeads.length, color: '#8b5cf6' },
-    { name: 'Insurance', value: insuranceLeads.length, color: '#ec4899' },
-    { name: 'Other', value: otherLeads.length, color: '#f43f5e' }
+    { name: 'Home Loans', value: backendLoanCounts['Home Loan'] || 0, color: '#3b82f6' },
+    { name: 'User Car Loans', value: backendLoanCounts['User Car Loan'] || 0, color: '#f97316' },
+    { name: 'Business Loans', value: backendLoanCounts['Business Loan'] || 0, color: '#f59e0b' },
+    { name: 'Personal Loans', value: backendLoanCounts['Personal Loan'] || 0, color: '#10b981' },
+    { name: 'DOD Loans', value: backendLoanCounts['DOD'] || 0, color: '#f43f5e' },
+    { name: 'Mortgage Loans', value: backendLoanCounts['Mortgage Loan'] || 0, color: '#8b5cf6' },
+    { name: 'CC/OD', value: backendLoanCounts['CC/OD'] || 0, color: '#4ade80' },
+    { name: 'CGTMSME', value: backendLoanCounts['CGTMSME'] || 0, color: '#a78bfa' },
+    { name: 'Mutual Fund', value: backendLoanCounts['Mutual Fund'] || 0, color: '#8b5cf6' },
+    { name: 'Insurance', value: backendLoanCounts['Insurance'] || 0, color: '#ec4899' },
+    { name: 'Other', value: backendLoanCounts['Other'] || 0, color: '#f43f5e' }
   ];
 
   // Leads over time data
-  const leadsPerDay = leadsData.reduce((acc, lead) => {
-    const date = moment(lead.createdAt).format("YYYY-MM-DD");
-    acc[date] = (acc[date] || 0) + 1;
-    return acc;
-  }, {});
-
-  const dates = leadsData.map(lead => moment(lead.createdAt)).filter(d => d.isValid());
-  const minDate = moment.min(dates);
-  const maxDate = moment.max(dates);
-
+  const leadsPerDay = reportStats?.leadsPerDay || {};
   const chartData = [];
-  for (let m = minDate.clone(); m.isSameOrBefore(maxDate, 'day'); m.add(1, "day")) {
-    const dateStr = m.format("YYYY-MM-DD");
-    chartData.push({
-      date: dateStr,
-      leads: leadsPerDay[dateStr] || 0,
-    });
+
+  if (Object.keys(leadsPerDay).length > 0) {
+    const dates = Object.keys(leadsPerDay).map(d => moment(d)).filter(d => d.isValid());
+    const minDate = moment.min(dates);
+    const maxDate = moment.max(dates);
+
+    for (let m = minDate.clone(); m.isSameOrBefore(maxDate, 'day'); m.add(1, "day")) {
+      const dateStr = m.format("YYYY-MM-DD");
+      chartData.push({
+        date: dateStr,
+        leads: leadsPerDay[dateStr] || 0,
+      });
+    }
   }
 
   const handleEmployeeChange = (e) => {
@@ -378,7 +382,7 @@ const LeadsReport = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600">Total Leads</p>
-                <p className="text-2xl font-bold text-blue-800">{leadsData.length}</p>
+                <p className="text-2xl font-bold text-blue-800">{totalLeadsCount}</p>
               </div>
               <div className="bg-blue-100 p-2 rounded-full">
                 <User className="w-5 h-5 text-blue-600" />
@@ -532,7 +536,7 @@ const LeadsReport = () => {
           </div>
 
           {/* Pagination */}
-          {filteredLeads.length > leadsPerPage && (
+          {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <div>
                 <p className="text-sm text-gray-700">

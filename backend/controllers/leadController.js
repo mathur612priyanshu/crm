@@ -1103,6 +1103,88 @@ exports.getFilteredLeads = async (req, res) => {
   }
 };
 
+exports.getLeadReportStats = async (req, res) => {
+  try {
+    const { emp_id, startDate, endDate, status } = req.query;
+
+    const whereClause = {};
+    if (emp_id) {
+      whereClause.person_id = emp_id;
+    }
+    if (startDate && endDate) {
+      whereClause.createdAt = {
+        [Op.between]: [new Date(startDate), new Date(endDate)],
+      };
+    }
+    if (status && status !== "All") {
+      const leadStatus = await resolveLeadStatus({ status });
+      whereClause.status_id = leadStatus?.status_id || null;
+    }
+
+    // 1. Lead Status Counts
+    const statusCountsRaw = await Lead.findAll({
+      attributes: ['status_id', [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']],
+      where: whereClause,
+      group: ['status_id'],
+      raw: true
+    });
+
+    const statusCountsMap = {};
+    statusCountsRaw.forEach(row => {
+      statusCountsMap[row.status_id] = parseInt(row.count) || 0;
+    });
+
+    const allStatuses = await LeadStatus.findAll({ attributes: ['status_id', 'name'] });
+    const leadStatusCounts = {};
+    allStatuses.forEach(s => {
+      if (statusCountsMap[s.status_id]) {
+        leadStatusCounts[s.name] = statusCountsMap[s.status_id];
+      }
+    });
+
+    // 2. Loan Type Counts
+    const loanCountsRaw = await Lead.findAll({
+      attributes: ['loan_type', [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']],
+      where: whereClause,
+      group: ['loan_type'],
+      raw: true
+    });
+
+    const loanTypeCounts = {};
+    loanCountsRaw.forEach(row => {
+      loanTypeCounts[row.loan_type] = parseInt(row.count) || 0;
+    });
+
+    // 3. Leads Over Time (Date -> Count)
+    const leadsOverTimeRaw = await Lead.findAll({
+      attributes: [
+        [Lead.sequelize.fn('DATE', Lead.sequelize.col('createdAt')), 'date'],
+        [Lead.sequelize.fn('COUNT', Lead.sequelize.col('lead_id')), 'count']
+      ],
+      where: whereClause,
+      group: [Lead.sequelize.fn('DATE', Lead.sequelize.col('createdAt'))],
+      raw: true
+    });
+
+    const leadsPerDay = {};
+    leadsOverTimeRaw.forEach(row => {
+      leadsPerDay[row.date] = parseInt(row.count) || 0;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        leadStatusCounts,
+        loanTypeCounts,
+        leadsPerDay
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching lead report stats:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
 exports.getDashboardStats = async (req, res) => {
   const { startDate, endDate } = req.query;
 

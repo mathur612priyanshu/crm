@@ -25,6 +25,7 @@ router.get('/getLeadByNumber/:lead_number', leadController.getLeadByNumber);
 router.get('/getLeadsForAdminPanel', leadController.getLeadsForAdminPanel);
 router.get('/getFollowupsCount', leadController.getLeadsByNextMeeting);
 router.get('/getFilteredLeads', leadController.getFilteredLeads);
+router.get('/leadReportStats', leadController.getLeadReportStats);
 router.get('/dashboardStats', leadController.getDashboardStats);
 router.post('/reassignLeadsBulk', leadController.reassignLeadsBulk);
 router.get('/getFollowups', leadController.getFollowupsPaginated);

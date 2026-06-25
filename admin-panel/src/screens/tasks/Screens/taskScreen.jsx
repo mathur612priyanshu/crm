@@ -196,7 +196,7 @@ function TaskScreen() {
   selected={newTask.start_date}
   onChange={(date) => setNewTask({ ...newTask, start_date: date })}
   showTimeSelect
-  dateFormat="Pp"
+  dateFormat="dd/MM/yyyy h:mm aa"
   placeholderText="Start DateTime"
   className="w-full border p-2 rounded"
 />
@@ -205,7 +205,7 @@ function TaskScreen() {
   selected={newTask.end_date}
   onChange={(date) => setNewTask({ ...newTask, end_date: date })}
   showTimeSelect
-  dateFormat="Pp"
+  dateFormat="dd/MM/yyyy h:mm aa"
   placeholderText="End DateTime"
   className="w-full border p-2 rounded"
 />

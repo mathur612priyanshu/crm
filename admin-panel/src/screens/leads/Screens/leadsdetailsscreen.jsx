@@ -148,6 +148,7 @@ const downloadexcel = () => {
     }
   };
 
+  /* 
   const fetchTaskDetails = async () => {
     try{
       const res = await axios.get(`${API_URL}/task_by_lead_id/${id}`);
@@ -156,6 +157,7 @@ const downloadexcel = () => {
       console.error("Error fetching tasks", error);
     }
   }
+  */
 
   useEffect(() => {
     const loadData = async () => {
@@ -165,7 +167,7 @@ const downloadexcel = () => {
           fetchLeadDetails(),
           fetchCallDetails(),
           fetchHistoryDetails(),
-          fetchTaskDetails(),
+          // fetchTaskDetails(),
           fetchEmployees()
         ]);
       } catch (err) {
@@ -232,12 +234,12 @@ const downloadexcel = () => {
         >
           History Details
         </button>
-        <button
+        {/* <button
           onClick={() => setActiveTab("tasks")}
           className={`px-4 py-2 rounded ${activeTab === "tasks" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
         >
           Tasks Details
-        </button>
+        </button> */}
       </div>
 
       {activeTab === "calls" ? (
@@ -312,7 +314,8 @@ const downloadexcel = () => {
           
           
         </>
-      ):(<>
+      )
+      : null /* (<>
           <h2 className="text-xl font-bold mb-4">Tasks</h2>
           {tasks.length ? (
             <div className="border rounded p-4 mb-6 bg-gray-100">
@@ -371,7 +374,8 @@ const downloadexcel = () => {
             </table>
           
           
-        </>)}
+        </>) */
+        }
     </div>
   );
 };

@@ -377,7 +377,7 @@ const UserDetailScreen = () => {
                         {call.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.number} </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-normal break-words max-w-md text-sm text-gray-500">
                         {call.remark}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

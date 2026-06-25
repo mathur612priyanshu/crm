@@ -543,11 +543,11 @@ class _CallDetailsScreenState extends State<CallDetailsScreen> {
                         },
                 ),
 
-                const SizedBox(height: 20),
-                const Text(
-                  'fetching Recording file ...Please Wait',
-                  style: TextStyle(color: Colors.black54),
-                ),
+                // const SizedBox(height: 20),
+                // const Text(
+                //   'fetching Recording file ...Please Wait',
+                //   style: TextStyle(color: Colors.black54),
+                // ),
                 const SizedBox(height: 20),
               ],
             ),

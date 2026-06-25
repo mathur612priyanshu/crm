@@ -1,9 +1,9 @@
 import 'package:capital_care/controllers/providers/lead_provider.dart';
 import 'package:capital_care/models/leads_model.dart';
-import 'package:capital_care/views/screens/leads/lead_details_screen.dart';
 import 'package:capital_care/views/widgets/app_scaffold.dart';
 import 'package:capital_care/views/widgets/custom_appbar.dart';
 import 'package:capital_care/views/widgets/lead_card.dart';
+import 'package:capital_care/theme/appcolors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -119,32 +119,108 @@ class _FreshLeadsState extends State<FreshLeads> {
           return RefreshIndicator(
             onRefresh: () async => _refreshPool(),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryColor,
+                        AppColors.primaryColor.withOpacity(0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryColor.withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.group_add_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "$availableCount",
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Fresh Leads Available",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
                 Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "$availableCount leads available",
-                          style: Theme.of(context).textTheme.titleMedium,
+                          "Import Leads",
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Enter the number of leads you want to assign to yourself.",
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                         TextField(
                           controller: _countController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: "How many leads do you want?",
+                            labelText: "Number of Leads",
                             helperText: "Max $maxAssignable at once",
-                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.download_rounded),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton(
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
                             onPressed:
                                 _isAssigning || safeMax < 1
                                     ? null
@@ -152,10 +228,24 @@ class _FreshLeadsState extends State<FreshLeads> {
                                       availableCount,
                                       maxAssignable,
                                     ),
-                            child: Text(
+                            icon: _isAssigning
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.add_task_rounded),
+                            label: Text(
                               _isAssigning
                                   ? "Importing..."
-                                  : "Import Leads to My Account",
+                                  : "Import to My Account",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -163,26 +253,6 @@ class _FreshLeadsState extends State<FreshLeads> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                if (leads.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 80),
-                    child: Center(child: Text("No unassigned fresh leads available.")),
-                  )
-                else
-                  ...leads.map(
-                    (lead) => GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LeadDetailsScreen(lead: lead),
-                          ),
-                        );
-                      },
-                      child: LeadCard(lead: lead),
-                    ),
-                  ),
               ],
             ),
           );

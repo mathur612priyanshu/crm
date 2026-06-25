@@ -177,22 +177,24 @@ const PerformanceScreen = () => {
         limit: 100000
       };
 
-      const [callsRes, tasksRes, leadsRes, attendanceRes] = await Promise.all([
+      const results = await Promise.allSettled([
         axios.get(`${API_URL}/filterCalls/${employee.emp_id}`, { params }),
         axios.get(`${API_URL}/task/${employee.emp_id}`, { params }),
         
         axios.get(`${API_URL}/getLeadsByEmpIdAndDate/${employee.emp_id}`, { params }),
 
-        axios.get(`${API_URL}/monthlyattendance/${fromDate ? fromDate.substring(0, 7) : '2025-01'}`, { params }),
+        axios.get(`${API_URL}/monthlyattendance/${fromDate ? fromDate.substring(0, 7) : moment().format('YYYY-MM')}`, { 
+          params: { ...params, startDate: fromDate, endDate: toDate } 
+        }),
       ]);
 
-      setCalls(callsRes.data.data || []);
-      setTasks(tasksRes.data.tasks || []);
+      const [callsRes, tasksRes, leadsRes, attendanceRes] = results;
+
+      setCalls(callsRes.status === 'fulfilled' ? (callsRes.value.data.data || []) : []);
+      setTasks(tasksRes.status === 'fulfilled' ? (tasksRes.value.data.tasks || []) : []);
       
-      setLeads(leadsRes.data.data || []);
-      console.log("asdfghjsdfghjkdfghj");
-      console.log("dfghjklxcvbnm,zxcvbnm,",attendanceRes);
-      setAttendance(attendanceRes.data.data || []);
+      setLeads(leadsRes.status === 'fulfilled' ? (leadsRes.value.data.data || []) : []);
+      setAttendance(attendanceRes.status === 'fulfilled' ? (attendanceRes.value.data.data || []) : []);
 
       setLoading(false);
     } catch (error) {
@@ -202,8 +204,18 @@ const PerformanceScreen = () => {
   };
 
   const handleEmployeeChange = (e) => {
-    const selectedEmp = JSON.parse(e.target.value);
-    setEmployee(selectedEmp);
+    const val = e.target.value;
+    if (!val) {
+      setEmployee(null);
+      return;
+    }
+    try {
+      const selectedEmp = JSON.parse(val);
+      setEmployee(selectedEmp);
+    } catch (err) {
+      console.error("Error parsing employee:", err);
+      setEmployee(null);
+    }
   };
 
   const renderPieChart = (data, title) => {

@@ -14,6 +14,8 @@ const OperationsScreen = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const filteredLeads = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -40,22 +42,22 @@ const OperationsScreen = () => {
         employeeRole === "manager" ? `${API_URL}/leads` : `${API_URL}/leads/${employeeId}`;
       const response = await axios.get(endpoint, {
         params: {
-          limit: 5000,
+          limit: 20,
+          page: currentPage,
           fromDate: fromDate || undefined,
           toDate: toDate || undefined,
+          team: "operations"
         }
       });
       
       const responseData = response.data?.data || response.data?.leads || (Array.isArray(response.data) ? response.data : []);
       
-      const operationLeads =
-        employeeRole === "manager"
-          ? responseData.filter((lead) =>
-              ["operations", "both"].includes(lead.statusDetails?.team)
-            )
-          : responseData;
+      setLeads(responseData);
 
-      setLeads(operationLeads);
+      if (response.data?.pagination) {
+        setTotalPages(response.data.pagination.totalPages || 1);
+        setCurrentPage(response.data.pagination.currentPage || 1);
+      }
     } catch (error) {
       console.error("Error fetching operation leads:", error);
       toast.error("Unable to load operation leads");
@@ -66,8 +68,11 @@ const OperationsScreen = () => {
 
   useEffect(() => {
     fetchStatuses();
+  }, []);
+
+  useEffect(() => {
     fetchOperationLeads();
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, currentPage]);
 
   const handleStatusChange = async (lead, statusId) => {
     const nextStatus = statuses.find((status) => String(status.status_id) === statusId);
@@ -181,6 +186,29 @@ const OperationsScreen = () => {
       {isLoading && (
         <div className="flex justify-center mt-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 bg-white p-4 border border-gray-200 rounded-lg">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1 || isLoading}
+            className="px-4 py-2 border rounded-md disabled:opacity-50 hover:bg-gray-50 font-medium text-sm"
+          >
+            Previous
+          </button>
+          <span className="text-gray-600 text-sm font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages || isLoading}
+            className="px-4 py-2 border rounded-md disabled:opacity-50 hover:bg-gray-50 font-medium text-sm"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

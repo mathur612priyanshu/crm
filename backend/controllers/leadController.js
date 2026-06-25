@@ -468,6 +468,19 @@ exports.getLeads = async (req, res)=>{
             };
         }
 
+        if (req.query.team === 'operations') {
+            const operationStatuses = await LeadStatus.findAll({
+                where: {
+                    is_active: true,
+                    team: { [Op.in]: ["operations", "both"] },
+                },
+            });
+
+            whereCondition.status_id = {
+                [Op.in]: operationStatuses.map((status) => status.status_id),
+            };
+        }
+
         const { rows: leads, count: totalCount } = await Lead.findAndCountAll({
             where: whereCondition,
             include: [leadStatusInclude],

@@ -48,15 +48,13 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         listen: false,
       ).fetchUserData(userId);
-      await Provider.of<LeadProvider>(context, listen: false).fetchAllLeads();
-      await Provider.of<CallsProvider>(
+      
+      // Fire these in the background without awaiting them so splash screen doesn't hang
+      Provider.of<LeadProvider>(context, listen: false).fetchAllLeads();
+      Provider.of<CallsProvider>(
         context,
         listen: false,
       ).fetchTotalCalls();
-      // await Provider.of<CallsProvider>(
-      //   context,
-      //   listen: false,
-      // ).fetchTodayCalls();
 
       Navigator.pushReplacement(
         context,

@@ -2,7 +2,6 @@ import 'package:capital_care/controllers/providers/lead_provider.dart';
 import 'package:capital_care/models/leads_model.dart';
 import 'package:capital_care/views/widgets/app_scaffold.dart';
 import 'package:capital_care/views/widgets/custom_appbar.dart';
-import 'package:capital_care/views/widgets/lead_card.dart';
 import 'package:capital_care/theme/appcolors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -41,6 +40,67 @@ class _FreshLeadsState extends State<FreshLeads> {
         listen: false,
       ).unassignedFreshLeadPool;
     });
+  }
+
+  Future<void> _confirmAndAssignLeads(
+    int availableCount,
+    int maxAssignable,
+  ) async {
+    final requestedCount = int.tryParse(_countController.text.trim()) ?? 0;
+
+    if (requestedCount < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter at least 1 lead")),
+      );
+      return;
+    }
+
+    if (requestedCount > maxAssignable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You can import max $maxAssignable leads at once")),
+      );
+      return;
+    }
+
+    if (requestedCount > availableCount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Only $availableCount unassigned leads available")),
+      );
+      return;
+    }
+
+    final shouldImport = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text("Confirm Import"),
+          content: Text(
+            "Are you sure you want to import $requestedCount fresh lead${requestedCount == 1 ? "" : "s"} to your account?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Import"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldImport == true) {
+      await _assignLeads(availableCount, maxAssignable);
+    }
   }
 
   Future<void> _assignLeads(int availableCount, int maxAssignable) async {
@@ -127,7 +187,7 @@ class _FreshLeadsState extends State<FreshLeads> {
                     gradient: LinearGradient(
                       colors: [
                         AppColors.primaryColor,
-                        AppColors.primaryColor.withOpacity(0.7),
+                        AppColors.primaryColor.withValues(alpha: 0.7),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -135,7 +195,7 @@ class _FreshLeadsState extends State<FreshLeads> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.3),
+                        color: AppColors.primaryColor.withValues(alpha: 0.3),
                         blurRadius: 15,
                         offset: const Offset(0, 8),
                       ),
@@ -224,7 +284,7 @@ class _FreshLeadsState extends State<FreshLeads> {
                             onPressed:
                                 _isAssigning || safeMax < 1
                                     ? null
-                                    : () => _assignLeads(
+                                    : () => _confirmAndAssignLeads(
                                       availableCount,
                                       maxAssignable,
                                     ),

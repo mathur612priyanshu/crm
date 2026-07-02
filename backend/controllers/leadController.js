@@ -105,14 +105,16 @@ const getActor = async (req) => {
 };
 
 const canActorSetStatus = (actorRole, leadStatus) => {
+  const role = String(actorRole || "").trim().toLowerCase();
+  
   // Admin is treated as a MANAGER in this system, so allow full editing
-  if (!actorRole || actorRole === EMPLOYEE_ROLES.MANAGER) return true;
+  if (!role || role === EMPLOYEE_ROLES.MANAGER || role === "admin") return true;
 
   // Calling/Operations can only move status within their assigned team
-  if (actorRole === EMPLOYEE_ROLES.OPERATIONS) {
+  if (role === EMPLOYEE_ROLES.OPERATIONS || role.includes("operation")) {
     return leadStatus.team === "operations" || leadStatus.team === "both";
   }
-  if (actorRole === EMPLOYEE_ROLES.CALLING) {
+  if (role === EMPLOYEE_ROLES.CALLING || role.includes("calling")) {
     return leadStatus.team === "calling" || leadStatus.team === "both";
   }
 
@@ -338,8 +340,10 @@ exports.updateLead = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid lead status' });
             }
 
-            if (!canActorSetStatus(actor.role, nextStatus)) {
-                return res.status(403).json({ message: 'This employee role cannot set this status' });
+            if (previousStatusId !== nextStatus.status_id) {
+                if (!canActorSetStatus(actor.role, nextStatus)) {
+                    return res.status(403).json({ message: 'This employee role cannot set this status' });
+                }
             }
 
             updateData.status_id = nextStatus.status_id;

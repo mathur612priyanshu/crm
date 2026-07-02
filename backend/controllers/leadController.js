@@ -106,16 +106,17 @@ const getActor = async (req) => {
 
 const canActorSetStatus = (actorRole, leadStatus) => {
   const role = String(actorRole || "").trim().toLowerCase();
+  const team = String(leadStatus?.team || "").trim().toLowerCase();
   
   // Admin is treated as a MANAGER in this system, so allow full editing
   if (!role || role === EMPLOYEE_ROLES.MANAGER || role === "admin") return true;
 
   // Calling/Operations can only move status within their assigned team
   if (role === EMPLOYEE_ROLES.OPERATIONS || role.includes("operation")) {
-    return leadStatus.team === "operations" || leadStatus.team === "both";
+    return team === "operations" || team === "both";
   }
   if (role === EMPLOYEE_ROLES.CALLING || role.includes("calling")) {
-    return leadStatus.team === "calling" || leadStatus.team === "both";
+    return team === "calling" || team === "both";
   }
 
   // Default deny
@@ -321,6 +322,7 @@ exports.updateLead = async (req, res) => {
     const updateData = { ...req.body };  // Accept any fields from the request body
 
     if (!id) {
+        console.error('updateLead failed: Lead ID is required');
         return res.status(400).json({ message: 'Lead ID is required' });
     }
 
@@ -332,6 +334,7 @@ exports.updateLead = async (req, res) => {
         const lead = await Lead.findByPk(id);
 
         if (!lead) {
+            console.error('updateLead failed: Lead not found for ID', id);
             return res.status(404).json({ message: 'Lead not found' });
         }
 
@@ -341,11 +344,13 @@ exports.updateLead = async (req, res) => {
 
         if (updateData.status || updateData.status_id) {
             if (!nextStatus) {
+                console.error('updateLead failed: Invalid lead status', updateData.status || updateData.status_id);
                 return res.status(400).json({ message: 'Invalid lead status' });
             }
 
             if (previousStatusId !== nextStatus.status_id) {
                 if (!canActorSetStatus(actor.role, nextStatus)) {
+                    console.error('updateLead failed: Role', actor.role, 'cannot set status', nextStatus.name);
                     return res.status(403).json({ message: 'This employee role cannot set this status' });
                 }
             }
@@ -360,6 +365,7 @@ exports.updateLead = async (req, res) => {
         });
 
         if (updated === 0) {
+            console.error('updateLead failed: Lead not found or no changes made. UpdateData:', updateData);
             return res.status(404).json({ message: 'Lead not found or no changes made' });
         }
 

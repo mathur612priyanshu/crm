@@ -100,7 +100,7 @@ const getActor = async (req) => {
   const employee = await Employee.findByPk(empId);
   return {
     emp_id: empId,
-    role: role || employee?.role || null,
+    role: employee?.role || role || null,
   };
 };
 

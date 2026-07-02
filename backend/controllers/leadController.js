@@ -324,6 +324,10 @@ exports.updateLead = async (req, res) => {
         return res.status(400).json({ message: 'Lead ID is required' });
     }
 
+    if (updateData.next_meeting === 'Invalid date' || updateData.next_meeting === 'Invalid Date') {
+        updateData.next_meeting = null;
+    }
+
     try {
         const lead = await Lead.findByPk(id);
 

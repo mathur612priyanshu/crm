@@ -9,6 +9,10 @@ exports.addHistory = async (req, res) => {
         return res.status(400).json({ message: "lead_id is required" });
     }
 
+    if (req.body.next_meeting === 'Invalid date' || req.body.next_meeting === 'Invalid Date') {
+        req.body.next_meeting = null;
+    }
+
     try {
         if (req.body.status && !req.body.status_id) {
             const statusObj = await LeadStatus.findOne({ where: { name: req.body.status } });

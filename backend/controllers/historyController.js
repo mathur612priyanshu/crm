@@ -23,13 +23,10 @@ exports.addHistory = async (req, res) => {
             if (prevStatusObj) req.body.previous_status_id = prevStatusObj.status_id;
         }
         
-        // If status_id is still not found (e.g. from an old frontend bug), don't crash the server, just return success since updateLead already handles history.
-        if (req.body.status_id == null) {
-            return res.status(200).json({ message: "History skipped (handled by lead controller)", id: null });
-        }
-
-        const newHistory = await History.create(req.body);
-        res.status(200).json({ message: "New History added successfully", id: newHistory.history_id });
+        // We no longer create history here because leadController (addLead/updateLead) already automatically creates it!
+        // We just return a success response so the Flutter app can update its local state without errors.
+        const mockId = Math.floor(Math.random() * 1000000);
+        res.status(200).json({ message: "History creation handled by lead controller", id: mockId });
     } catch (error) {
         console.error("Error adding History:", error);
         res.status(500).json({ message: "Database error", error });

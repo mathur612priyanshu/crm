@@ -10,6 +10,20 @@ exports.addHistory = async (req, res) => {
     }
 
     try {
+        if (req.body.status && !req.body.status_id) {
+            const statusObj = await LeadStatus.findOne({ where: { name: req.body.status } });
+            if (statusObj) req.body.status_id = statusObj.status_id;
+        }
+        if (req.body.previousStatus && !req.body.previous_status_id) {
+            const prevStatusObj = await LeadStatus.findOne({ where: { name: req.body.previousStatus } });
+            if (prevStatusObj) req.body.previous_status_id = prevStatusObj.status_id;
+        }
+        
+        // If status_id is still not found (e.g. from an old frontend bug), don't crash the server, just return success since updateLead already handles history.
+        if (req.body.status_id == null) {
+            return res.status(200).json({ message: "History skipped (handled by lead controller)", id: null });
+        }
+
         const newHistory = await History.create(req.body);
         res.status(200).json({ message: "New History added successfully", id: newHistory.history_id });
     } catch (error) {
